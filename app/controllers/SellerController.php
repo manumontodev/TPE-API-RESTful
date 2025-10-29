@@ -12,14 +12,13 @@ class SellerController
     function __construct()
     {
         $this->sellerModel = new SellerModel();
-        $this->sellerView = new SellerView();
     }
 
     // Valida que los datos del POST no esten vacíos
-    private function validarPost($urlRedirect)
+    private function validarPost()
     {
         // seteo los flash messagges
-        if ($urlRedirect == BASE_URL . "vendedor/nuevo"):
+/*        if ($urlRedirect == BASE_URL . "vendedor/nuevo"):
             $flashSize = "El tamaño maximo admitido es de 4mb";
             $flashRequired = "Faltan datos obligatorios";
             $flashEmail = "Ingrese un email válido";
@@ -28,51 +27,51 @@ class SellerController
             $flashRequired = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Faltan completar datos obligatorios"];
             $flashEmail = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Formato de email inválido"];
         endif;
-
+*/
         // si se intenta agregar un nuevo vendedor sin datos
         if (empty($_POST) && empty($_FILES)) {
-            $_SESSION['flash'] = $flashSize;
-            header("Location: " . $urlRedirect);
+            // $_SESSION['flash'] = $flashSize;
+            // header("Location: " . $urlRedirect);
             die();
         }
         // Si algun campo está vacio 
         if (empty($_POST['nombre']) || empty($_POST['telefono']) || empty($_POST['email'])) {
-            $_SESSION['flash'] = $flashRequired;
-            header("Location: " . $urlRedirect);
+            // $_SESSION['flash'] = $flashRequired;
+            // header("Location: " . $urlRedirect);
             die();
         }
         // Valida el formato de email
         if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-            $_SESSION['flash'] = $flashEmail;
-            header("Location: " . $urlRedirect);
+            // $_SESSION['flash'] = $flashEmail;
+            // header("Location: " . $urlRedirect);
             die();
         }
         return true;
     }
 
-    private function validarImagen($urlRedirect)
+    private function validarImagen()
     {
-        if ($urlRedirect == BASE_URL . "vendedor/nuevo"):
-            $flashWarningPng = "Solo se permiten archivo de imagen en formato .png, .jpg o .jpeg";
-            $flashWarningSize = "El archivo de imagen debe pesar menos de 4 megabytes";
-        else:
-            $flashWarningPng = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Solo se permiten imágenes .jpeg, .jpg o .png menores a 4 MB"];
-            $flashWarningSize = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "El archivo de imagen debe pesar menos de 4 megabytes"];
-        endif;
-
+        /*        if ($urlRedirect == BASE_URL . "vendedor/nuevo"):
+                    $flashWarningPng = "Solo se permiten archivo de imagen en formato .png, .jpg o .jpeg";
+                    $flashWarningSize = "El archivo de imagen debe pesar menos de 4 megabytes";
+                else:
+                    $flashWarningPng = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Solo se permiten imágenes .jpeg, .jpg o .png menores a 4 MB"];
+                    $flashWarningSize = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "El archivo de imagen debe pesar menos de 4 megabytes"];
+                endif;
+        */
         if (empty($_FILES['imagen']['tmp_name']) || $_FILES['imagen']['error'] != UPLOAD_ERR_OK) {
             // si no hay imagen
             return false;
         }
         $mime = mime_content_type($_FILES['imagen']['tmp_name']);
         if (!in_array($mime, ['image/jpeg', 'image/png'])) {
-            $_SESSION['flash'] = $flashWarningPng;
-            header("Location: " . $urlRedirect);
+            // $_SESSION['flash'] = $flashWarningPng;
+            // header("Location: " . $urlRedirect);
             die();
         }
         if ($_FILES['imagen']['size'] > self::MAX_SIZE) {
-            $_SESSION['flash'] = $flashWarningSize;
-            header("Location: " . $urlRedirect);
+            // $_SESSION['flash'] = $flashWarningSize;
+            // header("Location: " . $urlRedirect);
             die();
         }
         return true;
@@ -81,73 +80,75 @@ class SellerController
     public function insert($request)
     {
         // hardcodeo el form que manda submit, pero se podria obtener su id de $_POST asignando un hidden input
-        $url = BASE_URL . 'vendedor/nuevo';
+        // $url = BASE_URL . 'vendedores';
 
-        if ($this->validarPost($url)) {
+        if ($this->validarPost()) {
             $nombre = $_POST['nombre'];
             $telefono = $_POST['telefono'];
             $email = $_POST['email'];
-            $imgToUpload = $this->validarImagen($url);
+            $imgToUpload = $this->validarImagen();
             $img = null;
 
             if ($imgToUpload)
                 $img = $this->uploadImg($_FILES['imagen']);
 
             $success = $this->sellerModel->insert($nombre, $telefono, $email, $img);
-            if ($success)
-                $_SESSION['flash'] = ["success", "bi bi-patch-check-fill me-2", "Operación completada", "El vendedor ha sido registrado correctamente"];
-            header("Location: " . BASE_URL . "vendedores");
-            die();
+            // if ($success)
+            // $_SESSION['flash'] = ["success", "bi bi-patch-check-fill me-2", "Operación completada", "El vendedor ha sido registrado correctamente"];
+            // header("Location: " . BASE_URL . "vendedores");
+            // die();
         }
     }
 
     public function update($id, $page = null)
-    { 
+    {
         if (!empty($page))
             $page = "?page=$page";
-        $url = BASE_URL . "vendedores/editar/$id$page";
+        // $url = BASE_URL . "vendedores/editar/$id$page";
         if (!empty($_GET['from'])) // si viene del perfil de algun vendedor
-            $url = BASE_URL . "vendedor/$id&from=" . $_GET['from'];
-        if ($this->validarPost($url)) {
-            $nombre = $_POST['nombre'];
-            $telefono = $_POST['telefono'];
-            $email = $_POST['email'];
-            $imgToUpload = $this->validarImagen($url);
-            $img = null;
+            // $url = BASE_URL . "vendedor/$id&from=" . $_GET['from'];
+            if ($this->validarPost()) {
+                $nombre = $_POST['nombre'];
+                $telefono = $_POST['telefono'];
+                $email = $_POST['email'];
+                $imgToUpload = $this->validarImagen();
+                $img = null;
 
-            if ($imgToUpload)
-                $img = $this->uploadImg($_FILES['imagen']);
-        }
+                if ($imgToUpload)
+                    $img = $this->uploadImg($_FILES['imagen']);
+            }
         $result = $this->sellerModel->update($id, $nombre, $telefono, $email, $img);
 
-        if ($result)
-            $_SESSION['flash'] = ["success", "bi bi-check-circle-fill me-2", "Operación completada", "Los datos del vendedor se actualizaron correctamente"];
-        else 
-            $_SESSION['flash'] = ["warning", "bi bi-x-octagon-fill me-2", "Operación incompleta", "No se registraron cambios"];
-        echo "from:" . $_GET['from'];
-        die();
-        // redirijo
-        if (empty($_GET['from'])) 
-            // si no viene del perfil de ningun vendedor, lo mando a la tabla
-            $url = BASE_URL . "vendedores$page";
-        else
-            // sino, lo devuelvo al perfil de donde vino
-            $url = BASE_URL . "vendedor/$id"; 
-        header("Location: " . $url);
+        /*        if ($result)
+                    $_SESSION['flash'] = ["success", "bi bi-check-circle-fill me-2", "Operación completada", "Los datos del vendedor se actualizaron correctamente"];
+                else 
+                    $_SESSION['flash'] = ["warning", "bi bi-x-octagon-fill me-2", "Operación incompleta", "No se registraron cambios"];
+                echo "from:" . $_GET['from'];
+                die();
+                // redirijo
+                if (empty($_GET['from'])) 
+                    // si no viene del perfil de ningun vendedor, lo mando a la tabla
+                    $url = BASE_URL . "vendedores$page";
+                else
+                    // sino, lo devuelvo al perfil de donde vino
+                    $url = BASE_URL . "vendedor/$id"; 
+                header("Location: " . $url);
+        */
         die();
     }
 
     function delete($id)
     {
         $success = $this->sellerModel->delete($id);
-        if ($success):
-            header("Location: " . BASE_URL . "vendedores");
-            $_SESSION['flash'] = ["success", "bi bi-patch-check-fill me-2", "Operación completada", "El vendedor se ha eliminado correctamente"];
+        /*        if ($success):
+                    header("Location: " . BASE_URL . "vendedores");
+                    $_SESSION['flash'] = ["success", "bi bi-patch-check-fill me-2", "Operación completada", "El vendedor se ha eliminado correctamente"];
 
-        else:
-            header("Location: " . BASE_URL . "vendedores");
-            $_SESSION['flash'] = ["danger", "bi bi-x-octagon-fill me-2", "Oops! Algo falló", "El vendedor no se pudo eliminar"];
-        endif;
+                else:
+                    header("Location: " . BASE_URL . "vendedores");
+                    $_SESSION['flash'] = ["danger", "bi bi-x-octagon-fill me-2", "Oops! Algo falló", "El vendedor no se pudo eliminar"];
+                endif;
+        */
     }
 
     // sube la img al servidor y devuelve la ruta
@@ -158,90 +159,43 @@ class SellerController
         return $target;
     }
 
-    private function paginar($sellers)
-    {
-
-        $vendedoresPorPagina = 5;
-
-
-        if (is_array($sellers)) {
-            $totalItems = count($sellers);
-            $items = $sellers;
-        } elseif (is_object($sellers)) { // o un objeto
-            $saleModel = new SaleModel();
-            $items = $saleModel->getSalesById($sellers->id);
-            $totalItems = count($items);
-        } else {
-            $items = [];
-            $totalItems = 0;
-        }
-
-        // Paginación
-        $totalPaginas = ceil($totalItems / $vendedoresPorPagina);
-        $paginaActual = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        if ($paginaActual < 1)
-            $paginaActual = 1;
-        if ($paginaActual > $totalPaginas)
-            $paginaActual = $totalPaginas;
-
-        // Obtener los items de la página actual
-        $inicio = ($paginaActual - 1) * $vendedoresPorPagina;
-        $vendedoresPagina = array_slice($items, $inicio, $vendedoresPorPagina);
-        if ($paginaActual > 1) {
-            $pagina = "?page=" . $paginaActual;
-            $from = "&from=" . $paginaActual;
-
-        } else {
-            $pagina = "";
-            $from = ""; // $from permite al usuario volver a la pagina desde la que accedió al link
-        }
-
-        return [
-            'vendedoresPagina' => $vendedoresPagina,
-            'paginaActual' => $paginaActual,
-            'totalPaginas' => $totalPaginas,
-            'pagina' => $pagina,
-            'inicio' => $inicio,
-            'from' => $from
-        ];
-    }
-
 
     public function showSellers($request)
     {
-        $sellers = $this->sellerModel->getSellers();
-        $paginacion = $this->paginar($sellers);
-        if (isset($_SESSION['flash'])) {
-            $msg = $_SESSION['flash'];
-            unset($_SESSION['flash']);
-            $this->sellerView->showSellers($sellers, $request->user, $paginacion, $msg);
-            return;
-        }
-        $this->sellerView->showSellers($sellers, $request->user, $paginacion);
+        /*        $sellers = $this->sellerModel->getSellers();
+                $paginacion = $this->paginar($sellers);
+                if (isset($_SESSION['flash'])) {
+                    $msg = $_SESSION['flash'];
+                    unset($_SESSION['flash']);
+                    $this->sellerView->showSellers($sellers, $request->user, $paginacion, $msg);
+                    }
+                    $this->sellerView->showSellers($sellers, $request->user, $paginacion);
+                */
+        return;
     }
 
     public function showNewSellerForm($error = null, $request)
     {
-        $msg = null;
+/*        $msg = null;
         if (isset($_SESSION['flash'])) {
             $msg = $_SESSION['flash'];
             unset($_SESSION['flash']);
         }
         $this->sellerView->showFormAddSeller($msg, $request->user);
-    }
+*/    }
 
     public function showSellerEditMenu($request, $sellerId)
     {
-        $sellers = $this->sellerModel->getSellers();
+/*        $sellers = $this->sellerModel->getSellers();
         $paginacion = $this->paginar($sellers);
-        if (!empty($_GET['from'])){
+        if (!empty($_GET['from'])) {
             $paginacion['from'] = "&from=" . $_GET['from'];
         }
 
         if (isset($_SESSION['flash'])) {
             $msg = $_SESSION['flash'];
             unset($_SESSION['flash']);
-            $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion,$msg);
+            $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion, $msg);
             return;
         }
         if ($request->user):
@@ -249,11 +203,11 @@ class SellerController
         else:
             $this->sellerView->showErrorMsg();
         endif;
-    }
+*/    }
 
-    public function showSellerCard($sellerId, $request)
+    public function showSeller($sellerId, $request)
     {
-        $seller = $this->sellerModel->getSellerById($sellerId);
+/*        $seller = $this->sellerModel->getSellerById($sellerId);
         $paginacion = $this->paginar($seller);
 
         $msg = null;
@@ -277,16 +231,5 @@ class SellerController
         } else {
             $this->sellerView->showErrorMsg();
         }
-    }
-
-
-    public function showError()
-    {
-        $this->sellerView->showErrorMsg();
-    }
-
-    public function showExceptionError($e)
-    {
-        $this->sellerView->showExceptionError($e);
-    }
+*/    }
 }
