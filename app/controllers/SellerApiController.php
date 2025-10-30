@@ -57,8 +57,8 @@ class SellerApiController
             $email = $request->body->email;
             $img = null;
 
-            
-            
+
+
             /* si viene una imagen, la valida
             if (!empty($_FILES['imagen']['tmp_name'])) {
                 $validation = $this->validarImagen($request, $res);
@@ -84,55 +84,37 @@ class SellerApiController
         endif;
     }
 
-    public function update($id, $req, $res)
+    public function update($request, $res)
     {
-        if (!empty($page))
-            $page = "?page=$page";
-        // $url = BASE_URL . "vendedores/editar/$id$page";
-        if (!empty($_GET['from'])) // si viene del perfil de algun vendedor
-            // $url = BASE_URL . "vendedor/$id&from=" . $_GET['from'];
-            if ($this->validarPost($req, $res)) {
-                $nombre = $_POST['nombre'];
-                $telefono = $_POST['telefono'];
-                $email = $_POST['email'];
-                $validation = $this->validarImagen($req, $res);
-                $img = null;
+        $error = $this->validarDatos($request);
 
-                if ($validation)
-                    $img = $this->uploadImg($_FILES['imagen']);
-            }
-        $result = $this->sellerModel->update($id, $nombre, $telefono, $email, $img);
+        if ($error)
+            return $res->json($error, 400);
+        
+        // obtiene la id del vendedor
+        $id = $request->params->id;
 
-        /*        if ($result)
-                    $_SESSION['flash'] = ["success", "bi bi-check-circle-fill me-2", "Operación completada", "Los datos del vendedor se actualizaron correctamente"];
-                else 
-                    $_SESSION['flash'] = ["warning", "bi bi-x-octagon-fill me-2", "Operación incompleta", "No se registraron cambios"];
-                echo "from:" . $_GET['from'];
-                die();
-                // redirijo
-                if (empty($_GET['from'])) 
-                    // si no viene del perfil de ningun vendedor, lo mando a la tabla
-                    $url = BASE_URL . "vendedores$page";
-                else
-                    // sino, lo devuelvo al perfil de donde vino
-                    $url = BASE_URL . "vendedor/$id"; 
-                header("Location: " . $url);
-        */
-        die();
+        // obtiene los datos del body
+        $nombre = $request->body->nombre;
+        $telefono = $request->body->telefono;
+        $email = $request->body->email;
+
+        // actualiza los datos
+        $this->sellerModel->update($id, $nombre, $telefono, $email);
+        $seller = $this->sellerModel->getSellerById($id);
+        return $res->json(["Updated seller with id=$id" => $seller], 200);
     }
 
-    function delete($id)
+    function delete($request, $res)
     {
-        $success = $this->sellerModel->delete($id);
-        /*        if ($success):
-                    header("Location: " . BASE_URL . "vendedores");
-                    $_SESSION['flash'] = ["success", "bi bi-patch-check-fill me-2", "Operación completada", "El vendedor se ha eliminado correctamente"];
+        $id = $request->params->id;
+        $seller = $this->sellerModel->getSellerById($id);
 
-                else:
-                    header("Location: " . BASE_URL . "vendedores");
-                    $_SESSION['flash'] = ["danger", "bi bi-x-octagon-fill me-2", "Oops! Algo falló", "El vendedor no se pudo eliminar"];
-                endif;
-        */
+        if (!$seller)
+            return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
+
+        $this->sellerModel->delete($id);
+        return $res->json('Seller deleted', 204);
     }
 
     // sube la img al servidor y devuelve la ruta
@@ -144,21 +126,29 @@ class SellerApiController
     }
 
 
-    public function getSellers($req, $res)
+    public function getAll($req, $res)
     {
         $sellers = $this->sellerModel->getSellers();
         return $res->json($sellers);
     }
 
-    public function getSeller($request, $res)
+    public function get($request, $res)
     {
         $id = $request->params->id;
+        if (!$id)
+            return $res->json(["Seller ID no specified", 400]);
         $seller = $this->sellerModel->getSellerById($id);
 
         // verifico que exista el vendedor
-        if ($seller)
-            return $res->json($seller);
-        else
-            return $res->json('Required seller not found', 404);
+        if (!$seller)
+            return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
+
+        return $res->json($seller);
+    }
+
+    public function methodNotAllowed($request, $res)
+    {
+        // devolveria 405 si el method no es valido por ej si manda delete a /vendedores
+        return $res->json(['message' => 'Method not allowed'], 405);
     }
 }

@@ -23,6 +23,8 @@
                 401 => "Unauthorized",
                 403 => "Forbidden",
                 404 => "Not Found",
+                // agrego metodo no permitido
+                405 => "Method not allowed",
                 500 => "Internal Server Error"
             );
             if(!isset($status[$code])) {

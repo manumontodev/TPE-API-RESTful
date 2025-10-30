@@ -3,7 +3,7 @@
 require_once 'app/models/SaleModel.php';
 require_once 'app/models/SellerModel.php'; 
 
-class SaleController {
+class SaleApiController {
     private $model;
     private $view;
     private $modelSeller;
