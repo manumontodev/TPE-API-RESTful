@@ -4,7 +4,6 @@ require_once 'app/models/SellerModel.php';
 class SellerApiController
 {
     public $sellerModel;
-    public $sellerView;
     private const MAX_SIZE = 4 * 1024 * 1024; // tamaño maximo de la imagen = 4 MB
 
 
@@ -13,98 +12,93 @@ class SellerApiController
         $this->sellerModel = new SellerModel();
     }
 
-    // Valida que los datos del POST no esten vacíos
-    private function validarPost()
+    private function validarDatos($request)
     {
-        // si se intenta agregar un nuevo vendedor sin datos
-        if (empty($_POST) && empty($_FILES)) {
-            // $_SESSION['flash'] = $flashSize;
-            // header("Location: " . $urlRedirect);
-            die();
-        }
-        // Si algun campo está vacio 
-        if (empty($_POST['nombre']) || empty($_POST['telefono']) || empty($_POST['email'])) {
-            // $_SESSION['flash'] = $flashRequired;
-            // header("Location: " . $urlRedirect);
-            die();
-        }
-        // Valida el formato de email
-        if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-            // $_SESSION['flash'] = $flashEmail;
-            // header("Location: " . $urlRedirect);
-            die();
-        }
-        return true;
+        $error = false;
+        // cuando la imagen es demasiado muy grande php rechaza el POST y lo envia vacio
+        if (empty($request) && empty($_FILES))
+            $error = 'Image size too big';
+
+        // Valida datos obligatorios
+        elseif (empty($request->body->nombre) || empty($request->body->telefono) || empty($request->body->email))
+            $error = 'Missing required data';
+
+        // Valida el email
+        elseif (!filter_var($request->body->email, FILTER_VALIDATE_EMAIL))
+            $error = 'Invalid email format';
+
+        return $error;
     }
 
-    private function validarImagen()
+    private function validarImagen($request, $res)
     {
-        /*        if ($urlRedirect == BASE_URL . "vendedor/nuevo"):
-                    $flashWarningPng = "Solo se permiten archivo de imagen en formato .png, .jpg o .jpeg";
-                    $flashWarningSize = "El archivo de imagen debe pesar menos de 4 megabytes";
-                else:
-                    $flashWarningPng = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Solo se permiten imágenes .jpeg, .jpg o .png menores a 4 MB"];
-                    $flashWarningSize = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "El archivo de imagen debe pesar menos de 4 megabytes"];
-                endif;
-        */
-        if (empty($_FILES['imagen']['tmp_name']) || $_FILES['imagen']['error'] != UPLOAD_ERR_OK) {
-            // si no hay imagen
+        if (empty($_FILES['imagen']['tmp_name']) || $_FILES['imagen']['error'] != UPLOAD_ERR_OK)
             return false;
-        }
+
         $mime = mime_content_type($_FILES['imagen']['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'])) {
-            // $_SESSION['flash'] = $flashWarningPng;
-            // header("Location: " . $urlRedirect);
-            die();
-        }
-        if ($_FILES['imagen']['size'] > self::MAX_SIZE) {
-            // $_SESSION['flash'] = $flashWarningSize;
-            // header("Location: " . $urlRedirect);
-            die();
-        }
+
+        if (!in_array($mime, ['image/jpeg', 'image/png']))
+            return false;
+
+        if ($_FILES['imagen']['size'] > self::MAX_SIZE)
+            return false;
+
         return true;
     }
 
     public function insert($request, $res)
     {
-        // si los datos estan vacios
-        if (!$request->validarDatos())
-            return $request->json(['Algo fallo' => 'Faltan datos obligatorios'], 400);
+        $error = $this->validarDatos($request);
 
-        // obtiene los datos del body
-        $nombre = $request->body->nombre;
-        $telefono = $request->body->telefono;
-        $email = $request->body->email;
-        $imgToUpload = $this->validarImagen();
-        $img = null;
+        if (!$error):
+            // obtiene los datos del body
+            $nombre = $request->body->nombre;
+            $telefono = $request->body->telefono;
+            $email = $request->body->email;
+            $img = null;
 
-        // si la img paso la validacion
-        if ($imgToUpload)
+            
+            
+            /* si viene una imagen, la valida
+            if (!empty($_FILES['imagen']['tmp_name'])) {
+                $validation = $this->validarImagen($request, $res);
+                if (!$validation)
+                    return $res->json(['error' => 'Invalid media type', 'message' => 'Only JPG/PNG and size limit allowed'], 400);
+            }
+            // si paso la sube al sv
             $img = $request->body->imagen;
+            */
+            // inserta los datos
+            $newId = $this->sellerModel->insert($nombre, $telefono, $email);
 
-        $newSeller = $this->sellerModel->insert($nombre, $telefono, $email, $img);
-        // si algo fallo devuelve 500
-        if (!$newSeller)
-            return $res->json(['Algo fallo' => 'Error del servidor'], 500);
-        // devuelve el elemento creado
-        return $res->json([$newSeller => 'Creado'], 201);
+            // si fallo devuelve 500
+            if (!$newId)
+                return $res->json(['Algo fallo' => 'Error en el servidor'], 500);
+
+            // devuelve datos insertados
+            $newSeller = $this->sellerModel->getSellerById($newId);
+            return $res->json(['Creado' => $newSeller], 201);
+        else:
+            // si no valido los datos informa el error
+            return $res->json($error, 400);
+        endif;
     }
 
-    public function update($id, $page = null)
+    public function update($id, $req, $res)
     {
         if (!empty($page))
             $page = "?page=$page";
         // $url = BASE_URL . "vendedores/editar/$id$page";
         if (!empty($_GET['from'])) // si viene del perfil de algun vendedor
             // $url = BASE_URL . "vendedor/$id&from=" . $_GET['from'];
-            if ($this->validarPost()) {
+            if ($this->validarPost($req, $res)) {
                 $nombre = $_POST['nombre'];
                 $telefono = $_POST['telefono'];
                 $email = $_POST['email'];
-                $imgToUpload = $this->validarImagen();
+                $validation = $this->validarImagen($req, $res);
                 $img = null;
 
-                if ($imgToUpload)
+                if ($validation)
                     $img = $this->uploadImg($_FILES['imagen']);
             }
         $result = $this->sellerModel->update($id, $nombre, $telefono, $email, $img);
@@ -153,70 +147,18 @@ class SellerApiController
     public function getSellers($req, $res)
     {
         $sellers = $this->sellerModel->getSellers();
-
-
         return $res->json($sellers);
     }
 
-    public function showNewSellerForm($error = null, $request)
+    public function getSeller($request, $res)
     {
-        /*        $msg = null;
-                if (isset($_SESSION['flash'])) {
-                    $msg = $_SESSION['flash'];
-                    unset($_SESSION['flash']);
-                }
-                $this->sellerView->showFormAddSeller($msg, $request->user);
-        */
-    }
+        $id = $request->params->id;
+        $seller = $this->sellerModel->getSellerById($id);
 
-    public function showSellerEditMenu($request, $sellerId)
-    {
-        /*        $sellers = $this->sellerModel->getSellers();
-                $paginacion = $this->paginar($sellers);
-                if (!empty($_GET['from'])) {
-                    $paginacion['from'] = "&from=" . $_GET['from'];
-                }
-
-                if (isset($_SESSION['flash'])) {
-                    $msg = $_SESSION['flash'];
-                    unset($_SESSION['flash']);
-                    $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion, $msg);
-                    return;
-                }
-                if ($request->user):
-                    $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion);
-                else:
-                    $this->sellerView->showErrorMsg();
-                endif;
-        */
-    }
-
-    public function showSeller($sellerId, $request)
-    {
-        /*        $seller = $this->sellerModel->getSellerById($sellerId);
-                $paginacion = $this->paginar($seller);
-
-                $msg = null;
-                if (isset($_SESSION['flash'])):
-                    $msg = $_SESSION['flash'];
-                    unset($_SESSION['flash']);
-                endif;
-                // verifico que exista el vendedor
-                if ($seller) {
-                    // instancio el modelo de ventas para obtener las ventas del vendedor
-                    $saleModel = new SaleModel();
-                    $sales = $saleModel->getSalesById($sellerId);
-                    $totalVentas = count($sales);
-
-                    if (!empty($_GET['from'])):
-                        $paginacion['from'] = $_GET['from'];
-                        $this->sellerView->showCard($seller, $request->user, $sales, $totalVentas, $paginacion, $msg);
-                    else:
-                        $this->sellerView->showCard($seller, $request->user, $sales, $totalVentas, $paginacion, $msg);
-                    endif;
-                } else {
-                    $this->sellerView->showErrorMsg();
-                }
-        */
+        // verifico que exista el vendedor
+        if ($seller)
+            return $res->json($seller);
+        else
+            return $res->json('Required seller not found', 404);
     }
 }

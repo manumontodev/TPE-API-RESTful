@@ -44,7 +44,7 @@ $router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'dele
 // vendedores
 $router->addRoute('vendedores',     'GET',   'SellerApiController',    'getSellers');
 $router->addRoute('vendedores',     'POST',   'SellerApiController',    'insert');
-$router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'showSeller');
+$router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'getSeller');
 $router->addRoute('vendedores/:id',     'PUT',      'SellerApiController',    'update');
 $router->addRoute('vendedores/:id',     'DELETE',      'SellerApiController',    'delete');
 

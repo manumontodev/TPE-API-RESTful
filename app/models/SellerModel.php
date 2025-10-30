@@ -1,7 +1,8 @@
 <?php
 require_once 'Model.php';
-class SellerModel extends Model{
-    
+class SellerModel extends Model
+{
+
     protected function createTable()
     {
         $this->db->exec(
@@ -29,8 +30,9 @@ class SellerModel extends Model{
         $query = $this->db->query('SHOW TABLES LIKE "vendedor"');
         return count($query->fetchAll()) > 0;
     }
-    
-    public function getSellers(){
+
+    public function getSellers()
+    {
         $query = $this->db->prepare('SELECT * FROM vendedor');
         $query->execute();
 
@@ -39,37 +41,42 @@ class SellerModel extends Model{
         return $sellers;
     }
 
-    public function getSellerById($id) {
-        $query  = $this->db->prepare('SELECT * FROM vendedor WHERE id = ?');
-        $query->execute([(int)$id]);
+    public function getSellerById($id)
+    {
+        $query = $this->db->prepare('SELECT * FROM vendedor WHERE id = ?');
+        $query->execute([(int) $id]);
         return $query->fetch(PDO::FETCH_OBJ);
     }
 
-    public function update($id, $nombre, $telefono, $email, $img = null) {        
+    public function update($id, $nombre, $telefono, $email, $img = null)
+    {
         if ($img):
             $query = $this->db->prepare('UPDATE vendedor SET imagen = ? WHERE id = ?');
             $query->execute([$img, $id]);
-            return $query->rowCount()>0;                    
+            return $query->rowCount() > 0;
         else:
             $query = $this->db->prepare("UPDATE `vendedor` SET `nombre` = ?, `telefono` = ? , `email` = ? WHERE id = ?");
             $query->execute([$nombre, $telefono, $email, $id]);
-            return $query->rowCount()>0;
+            return $query->rowCount() > 0;
         endif;
-    } 
+    }
 
-    public function delete($id) {
-        $query = $this->db->prepare("DELETE FROM vendedor WHERE id = ?");        
+    public function delete($id)
+    {
+        $query = $this->db->prepare("DELETE FROM vendedor WHERE id = ?");
         $query->execute([$id]);
         return $query->rowCount() > 0;
     }
 
-    public function insert($nombre, $telefono, $email, $img = null) {
+    public function insert($nombre, $telefono, $email, $img = null)
+    {
         if ($img)
             $path = $img;
         else
             $path = 'img/default-user-img.jpg';
         $query = $this->db->prepare("INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email`, `imagen` ) VALUES (NULL, ?, ?, ?, ?)");
         $query->execute([$nombre, $telefono, $email, $path]);
-        return $query->rowCount() > 0;
+        return $this->db->lastInsertId();
+
     }
 }
