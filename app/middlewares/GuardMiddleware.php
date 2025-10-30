@@ -1,12 +1,13 @@
 <?php
 
-    class GuardMiddleware {
-        public function run($request) {
-            if($request->user) {  //se verifica que haya un usuario logueado
-                return $request; //si lo hay, se continua la ejecucion
-            } else {
-                header("Location: ".BASE_URL."showLogin"); //y si no, vuelvo al home
-                exit();
+    class GuardMiddleware extends Middleware {
+        public function run($request, $response) {
+            if(!$request->user) {
+                header("WWW-Authenticate: Basic realm='Access to the API'");
+                return $response->json("No autorizado", 401);
+            }
+            else if(!in_array('BANANA', $request->user->roles)) {
+                return $response->json("No tiene permisos suficientes", 403);
             }
         }
     }

@@ -1,12 +1,11 @@
 <?php
 require_once 'app/models/SellerModel.php';
-require_once 'app/views/SellerView.php';
 
-class SellerController
+class SellerApiController
 {
     public $sellerModel;
     public $sellerView;
-    private const MAX_SIZE = 4000 * 1024 * 1024; // tamaño maximo de la imagen = 4 MB
+    private const MAX_SIZE = 4 * 1024 * 1024; // tamaño maximo de la imagen = 4 MB
 
 
     function __construct()
@@ -17,17 +16,6 @@ class SellerController
     // Valida que los datos del POST no esten vacíos
     private function validarPost()
     {
-        // seteo los flash messagges
-/*        if ($urlRedirect == BASE_URL . "vendedor/nuevo"):
-            $flashSize = "El tamaño maximo admitido es de 4mb";
-            $flashRequired = "Faltan datos obligatorios";
-            $flashEmail = "Ingrese un email válido";
-        else:
-            $flashSize = ["danger", "bi bi-x-circle-fill me-2", "No se pudo procesar", "El archivo no es compatible"];
-            $flashRequired = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Faltan completar datos obligatorios"];
-            $flashEmail = ["warning", "bi bi-exclamation-triangle-fill me-2", "No se pudo completar", "Formato de email inválido"];
-        endif;
-*/
         // si se intenta agregar un nuevo vendedor sin datos
         if (empty($_POST) && empty($_FILES)) {
             // $_SESSION['flash'] = $flashSize;
@@ -77,27 +65,29 @@ class SellerController
         return true;
     }
 
-    public function insert($request)
+    public function insert($request, $res)
     {
-        // hardcodeo el form que manda submit, pero se podria obtener su id de $_POST asignando un hidden input
-        // $url = BASE_URL . 'vendedores';
+        // si los datos estan vacios
+        if (!$request->validarDatos())
+            return $request->json(['Algo fallo' => 'Faltan datos obligatorios'], 400);
 
-        if ($this->validarPost()) {
-            $nombre = $_POST['nombre'];
-            $telefono = $_POST['telefono'];
-            $email = $_POST['email'];
-            $imgToUpload = $this->validarImagen();
-            $img = null;
+        // obtiene los datos del body
+        $nombre = $request->body->nombre;
+        $telefono = $request->body->telefono;
+        $email = $request->body->email;
+        $imgToUpload = $this->validarImagen();
+        $img = null;
 
-            if ($imgToUpload)
-                $img = $this->uploadImg($_FILES['imagen']);
+        // si la img paso la validacion
+        if ($imgToUpload)
+            $img = $request->body->imagen;
 
-            $success = $this->sellerModel->insert($nombre, $telefono, $email, $img);
-            // if ($success)
-            // $_SESSION['flash'] = ["success", "bi bi-patch-check-fill me-2", "Operación completada", "El vendedor ha sido registrado correctamente"];
-            // header("Location: " . BASE_URL . "vendedores");
-            // die();
-        }
+        $newSeller = $this->sellerModel->insert($nombre, $telefono, $email, $img);
+        // si algo fallo devuelve 500
+        if (!$newSeller)
+            return $res->json(['Algo fallo' => 'Error del servidor'], 500);
+        // devuelve el elemento creado
+        return $res->json([$newSeller => 'Creado'], 201);
     }
 
     public function update($id, $page = null)
@@ -160,76 +150,73 @@ class SellerController
     }
 
 
-    public function showSellers($request)
+    public function getSellers($req, $res)
     {
-        /*        $sellers = $this->sellerModel->getSellers();
-                $paginacion = $this->paginar($sellers);
-                if (isset($_SESSION['flash'])) {
-                    $msg = $_SESSION['flash'];
-                    unset($_SESSION['flash']);
-                    $this->sellerView->showSellers($sellers, $request->user, $paginacion, $msg);
-                    }
-                    $this->sellerView->showSellers($sellers, $request->user, $paginacion);
-                */
-        return;
+        $sellers = $this->sellerModel->getSellers();
+
+
+        return $res->json($sellers);
     }
 
     public function showNewSellerForm($error = null, $request)
     {
-/*        $msg = null;
-        if (isset($_SESSION['flash'])) {
-            $msg = $_SESSION['flash'];
-            unset($_SESSION['flash']);
-        }
-        $this->sellerView->showFormAddSeller($msg, $request->user);
-*/    }
+        /*        $msg = null;
+                if (isset($_SESSION['flash'])) {
+                    $msg = $_SESSION['flash'];
+                    unset($_SESSION['flash']);
+                }
+                $this->sellerView->showFormAddSeller($msg, $request->user);
+        */
+    }
 
     public function showSellerEditMenu($request, $sellerId)
     {
-/*        $sellers = $this->sellerModel->getSellers();
-        $paginacion = $this->paginar($sellers);
-        if (!empty($_GET['from'])) {
-            $paginacion['from'] = "&from=" . $_GET['from'];
-        }
+        /*        $sellers = $this->sellerModel->getSellers();
+                $paginacion = $this->paginar($sellers);
+                if (!empty($_GET['from'])) {
+                    $paginacion['from'] = "&from=" . $_GET['from'];
+                }
 
-        if (isset($_SESSION['flash'])) {
-            $msg = $_SESSION['flash'];
-            unset($_SESSION['flash']);
-            $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion, $msg);
-            return;
-        }
-        if ($request->user):
-            $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion);
-        else:
-            $this->sellerView->showErrorMsg();
-        endif;
-*/    }
+                if (isset($_SESSION['flash'])) {
+                    $msg = $_SESSION['flash'];
+                    unset($_SESSION['flash']);
+                    $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion, $msg);
+                    return;
+                }
+                if ($request->user):
+                    $this->sellerView->showEditMenu($sellerId, $sellers, $request->user, $paginacion);
+                else:
+                    $this->sellerView->showErrorMsg();
+                endif;
+        */
+    }
 
     public function showSeller($sellerId, $request)
     {
-/*        $seller = $this->sellerModel->getSellerById($sellerId);
-        $paginacion = $this->paginar($seller);
+        /*        $seller = $this->sellerModel->getSellerById($sellerId);
+                $paginacion = $this->paginar($seller);
 
-        $msg = null;
-        if (isset($_SESSION['flash'])):
-            $msg = $_SESSION['flash'];
-            unset($_SESSION['flash']);
-        endif;
-        // verifico que exista el vendedor
-        if ($seller) {
-            // instancio el modelo de ventas para obtener las ventas del vendedor
-            $saleModel = new SaleModel();
-            $sales = $saleModel->getSalesById($sellerId);
-            $totalVentas = count($sales);
+                $msg = null;
+                if (isset($_SESSION['flash'])):
+                    $msg = $_SESSION['flash'];
+                    unset($_SESSION['flash']);
+                endif;
+                // verifico que exista el vendedor
+                if ($seller) {
+                    // instancio el modelo de ventas para obtener las ventas del vendedor
+                    $saleModel = new SaleModel();
+                    $sales = $saleModel->getSalesById($sellerId);
+                    $totalVentas = count($sales);
 
-            if (!empty($_GET['from'])):
-                $paginacion['from'] = $_GET['from'];
-                $this->sellerView->showCard($seller, $request->user, $sales, $totalVentas, $paginacion, $msg);
-            else:
-                $this->sellerView->showCard($seller, $request->user, $sales, $totalVentas, $paginacion, $msg);
-            endif;
-        } else {
-            $this->sellerView->showErrorMsg();
-        }
-*/    }
+                    if (!empty($_GET['from'])):
+                        $paginacion['from'] = $_GET['from'];
+                        $this->sellerView->showCard($seller, $request->user, $sales, $totalVentas, $paginacion, $msg);
+                    else:
+                        $this->sellerView->showCard($seller, $request->user, $sales, $totalVentas, $paginacion, $msg);
+                    endif;
+                } else {
+                    $this->sellerView->showErrorMsg();
+                }
+        */
+    }
 }
