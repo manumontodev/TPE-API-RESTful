@@ -2,16 +2,13 @@
 require_once './libs/router/router.php';
 require_once './app/controllers/SellerApiController.php';
 require_once './app/controllers/SaleApiController.php';
-
-/* para usar mas tarde con autenticacion:
-
-require_once './app/controllers/AuthController.php';
+require_once './app/controllers/AuthApiController.php';
 require_once './libs/jwt/jwt.middleware.php';
-require_once './app/middlewares/guard-api.middleware.php';
-$router->addMiddleware(new JWTMiddleware());
-$router->addMiddleware(new GuardMiddleware());
+require_once './app/middlewares/GuardApiMiddleware.php';
 
-*/
+
+
+
 
 // Permitir solicitudes desde cualquier origen (solo para probar frontend)
 header("Access-Control-Allow-Origin: *");
@@ -33,18 +30,26 @@ $router = new Router();
 $router->addRoute('auth/login',     'GET',     'AuthApiController',    'login');
 $router->addRoute('auth/logout',     'GET',     'AuthApiController',    'logout');
 
-// ventas
+// listar ventas
 $router->addRoute('ventas',         'GET',      'SaleApiController',    'showSales');
-$router->addRoute('ventas',     'POST',      'SaleApiController',    'addSale');
 $router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSaleDetail');
+
+// listar vendedores
+$router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
+$router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
+
+
+
+$router->addMiddleware(new JWTMiddleware());
+$router->addMiddleware(new GuardApiMiddleware());
+
+// metodos ABM ventas
+$router->addRoute('ventas',     'POST',      'SaleApiController',    'addSale');
 $router->addRoute('ventas/:id',     'PUT',      'SaleApiController',    'updateSale');
 $router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'deleteSale');
 
-
-// vendedores
-$router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
+// metodos ABM vendedores
 $router->addRoute('vendedores',     'POST',   'SellerApiController',    'insert');
-$router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
 $router->addRoute('vendedores/:id',     'PUT',      'SellerApiController',    'update');
 $router->addRoute('vendedores/:id',     'DELETE',      'SellerApiController',    'delete');
 

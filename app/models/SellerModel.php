@@ -74,9 +74,8 @@ class SellerModel extends Model
             $path = $img;
         else
             $path = 'img/default-user-img.jpg';
-        $query = $this->db->prepare("INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email`, `imagen` ) VALUES (NULL, ?, ?, ?, ?)");
-        $query->execute([$nombre, $telefono, $email, $path]);
+        $query = $this->db->prepare("INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email` ) VALUES (NULL, ?, ?, ?)");
+        $query->execute([$nombre, $telefono, $email]);
         return $this->db->lastInsertId();
-
     }
 }

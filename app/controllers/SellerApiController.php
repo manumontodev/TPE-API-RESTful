@@ -77,7 +77,7 @@ class SellerApiController
 
             // devuelve datos insertados
             $newSeller = $this->sellerModel->getSellerById($newId);
-            return $res->json(['Creado' => $newSeller], 201);
+            return $res->json($newSeller, 201);
         else:
             // si no valido los datos informa el error
             return $res->json($error, 400);
@@ -102,7 +102,7 @@ class SellerApiController
         // actualiza los datos
         $this->sellerModel->update($id, $nombre, $telefono, $email);
         $seller = $this->sellerModel->getSellerById($id);
-        return $res->json(["Updated seller with id=$id" => $seller], 200);
+        return $res->json($seller, 200);
     }
 
     function delete($request, $res)
