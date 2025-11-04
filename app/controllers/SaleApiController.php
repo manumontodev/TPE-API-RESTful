@@ -1,127 +1,256 @@
 <?php
-
 require_once 'app/models/SaleModel.php';
 require_once 'app/models/SellerModel.php'; 
 
 class SaleApiController {
     private $model;
-    private $view;
     private $modelSeller;
+    private $page;
+    private $limit;
 
-    function __construct() {
-        // instanciar categoria primero, luego item (contrario: rompe autodeploy por la dependencia de tablas)
+    function __construct($page = 1, $limit = 3) {
         $this->modelSeller = new SellerModel(); 
         $this->model = new SaleModel();
-        $this->view = new SaleView();
+        // Se inician las propiedades de clase para la paginación
+        $this->page = $page;
+        $this->limit = $limit;
     }
 
-    public function showSales($request) {
-        $sales = $this->model->getAll();
-        $this->view->showSales($sales, $request->user);
-    } 
+//api/venta
+public function getAllSales($req, $res)
+{
+    // Parámetros permitidos que acepta la API. Se colocan manualmente como una forma de proteger la API
+    $allowedParams = ['sortField', 'sortOrder', 'page', 'limit', 'min_price', 'max_price', 'id_vendedor', 'resource', 'id_venta'];
+
+    // Obtener parámetros de la solicitud
+    $queryParams = array_keys($_GET);
+
+    // Verificar si hay parámetros no permitidos
+    foreach ($queryParams as $param) {
+        if (!in_array($param, $allowedParams)) {
+            return $res->json('Parámetro no permitido: ' . $param, 400);
+        }
+    }
+    // Ordenamiento
+    $sortFields = ['precio', 'id_vendedor'];
+
+    $userSortField = isset($_GET['sortField']) ? $_GET['sortField'] : null;
+
+    // Validar que sortField sea válido
+    if ($userSortField && !in_array($userSortField, $sortFields)) {
+        return $res->json('Campo de ordenamiento no permitido: ' . $userSortField, 400);
+    }
+
+    // Usar el campo de ordenamiento por defecto si no se proporciona
+    $userSortField = $userSortField ?: 'precio';
+    // Obtiene el parámetro de orden del usuario (asc o desc) usando $_GET y usa 'asc' por defecto
+    $userSortOrder = isset($_GET['sortOrder']) && $_GET['sortOrder'] === 'desc' ? 'desc' : 'asc';
+
+    // Paginación
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : $this->page;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : $this->limit;
+    
+    // Validación de la página
+    if ($page < 1) {
+        $page = 1; // Fuerza a la primera página si se proporciona un valor menor
+    }
+    
+    // Validación del límite
+    if ($limit < 1) {
+        $limit = 5; // Establece un límite predeterminado
+    }
+    
+    // Cálculo del offset
+    $offset = ($page - 1) * $limit;
+    
+    // Filtros
+    $filters = [];
+    $params = [];
+    
+    // Filtra por precio
+    if (isset($_GET['min_price'])) {
+        $minPrice = filter_var($_GET['min_price'], FILTER_VALIDATE_FLOAT); //filter_var verifica y sanitiza
+        if ($minPrice !== false) {
+            $filters[] = "precio >= :min_price"; // :min_price marcador de posicion que será usado después
+            $params[':min_price'] = $minPrice; // Agrega parámetro
+        }
+    }
+    
+    if (isset($_GET['max_price'])) {
+        $maxPrice = filter_var($_GET['max_price'], FILTER_VALIDATE_FLOAT);
+        if ($maxPrice !== false) {
+            $filters[] = "precio <= :max_price"; // Usa la columna "precio"
+            $params[':max_price'] = $maxPrice; // Agrega parámetro
+        }
+    }
+    if (isset($_GET['id_vendedor'])) {
+        $idVendedor = filter_var($_GET['id_vendedor'], FILTER_VALIDATE_INT);
+        if ($idVendedor === false) {
+            return $res->json('ID de vendedor inválido. Debe ser un número entero.', 400);
+        }
+        $filters[] = "id_vendedor = :id_vendedor";
+        $params[':id_vendedor'] = $idVendedor;
+    }
+    
+    // Obtiene ventas con filtros y paginación
+    try {
+        $sales = $this->model->getAll($userSortField, $userSortOrder, $filters, $limit, $offset, $params);
+        $totalSales = $this->model->countSales($filters, $params);
+        if ($totalSales < 0) {
+            $totalSales = 0; // En caso de que haya un error
+        }
+    
+        // Para cada venta, obtiene el vendedor
+        foreach ($sales as &$sale) {
+            $seller = $this->modelSeller->getSellerById($sale->id_vendedor);
+            $sale->id_vendedor = $seller ?  $seller->id_vendedor  : 'Desconocido';
+        }
+    
+        $response = [
+            'ventas' => $sales,
+            'pagina' => $page,
+            'limite' => $limit,
+            'total_ventas' => $totalSales,
+            'total_paginas' => ceil($totalSales / $limit),
+        ];
+        $res->setStatusCode(200);
+        $res->setBody($response);
+        return $res->send();
+        } catch (Exception $e) {
+            $res->setStatusCode(500);
+            $res->setBody(['error' => $e->getMessage()]);
+            return $res->send();
+        }
+    }
 
 
-    public function showSaleDetail($id) {
+    
+    //api/venta/:id (GET)
+    public function showSale($req, $res)
+    {
+        $id = $req->params->id_venta;
+
+        // Validar que id_venta no esté vacío y sea un número entero positivo
+        if (empty($id) || !is_numeric($id) || $id <= 0) {
+            return $res->json('El ID de venta es inválido. Debe ser un número entero positivo.', 400);
+        }
         $sale = $this->model->getSaleById($id);
-    
-        if ($sale) {
-            $this->view->showSaleDetail($sale);
-        } else {
-            $this->view->showError("No se encontró la venta con ID $id");
-        }
-    } 
-    
 
-    public function showSale($id) {
-        $sale = $this->model->showSale($id);
         if (!$sale) {
-            $this->view->showError("No se encontró la venta con ID $id");
-            return;
+            return $res->json('Venta no encontrada', 404);
         }
-        $this->view->showSaleDetail($sale);
+
+        return $res->json($sale, 200);
     }
 
-    public function showAddSaleForm($request) {
-        if (!isset($_SESSION['USER_ROLE']) || $_SESSION['USER_ROLE'] !== 'administrador') {
-            return $this->view->showError('Acceso denegado. Solo los administradores pueden agregar ventas.');
+    //api/venta(POST)
+    public function addSale($req, $res){  
+         //valido datos
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (empty($req->body->producto) || empty($req->body->precio) || empty($req->body->id_vendedor) || empty($req->body->fecha)) {
+                return $res->json('Todos los campos son obligatorios.', 400);
         }
-    
-        $sellers = $this->modelSeller->getSellers();
-        $this->view->showAddSaleForm($sellers, $request->user); // necesito el user para mostrar el boton de nuevo vendedor en el menu dropdown
-    }//se usa 
-    
+         //obtengo datos
+         $producto = $req->body->producto;
+         $precio = $req->body->precio;
+         $id_vendedor = $req->body->id_vendedor;
+         $fecha = $req->body->fecha;
 
-    public function addSale($request) {
-        if (!isset($_SESSION['USER_ROLE']) || $_SESSION['USER_ROLE'] !== 'administrador') {
-            return $this->view->showError('Acceso denegado. Solo los usuarios registrados pueden agregar ventas.');
+
+         // Validar que los campos obligatorios no estén vacíos
+         if (empty($producto)) {
+             return $res->json('El campo "inmueble" es obligatorio.', 400);
+         }
+
+         if (empty($precio)) {
+            return $res->json('El campo "precio" es obligatorio.', 400);
         }
-    
-        if (empty($_POST['producto']) || empty($_POST['precio']) || empty($_POST['vendedor']) || empty($_POST['fecha'])) {
-            return $this->view->showError('Error: faltan datos obligatorios');
+
+        if (empty($id_vendedor)) {
+            return $res->json('El campo "id_vendedor" es obligatorio.', 400);
         }
-    
-        $producto = $_POST['producto'];
-        $precio = $_POST['precio'];
-        $vendedor = $_POST['vendedor'];
-        $fecha = $_POST['fecha'];
-    
-        $id = $this->model->insert($producto, $precio, $vendedor, $fecha);
-    
+
+         if (empty($fecha)) {
+             return $res->json('El campo "fecha" es obligatorio.', 400);
+         }
+
+        // Validar que el precio sea un número positivo
+        if (!is_numeric($precio) || $precio <= 0) {
+            return $res->json('El precio debe ser un número positivo.', 400);
+        }
+
+        // Validar que el ID del vendedor sea un número positivo
+        if (!is_numeric($id_vendedor) || $id_vendedor <= 0) {
+            return $res->json('El ID del vendedor no es válido.', 400);
+        }
+
+        // Verifica si el vendedor existe
+        if (!$this->modelSeller->getSellerById($id_vendedor)) {
+            return $res->json('No hay vendedores disponibles con ese ID.', 404);
+        }
+
+        //inserto datos
+        $id = $this->model->insert($producto, $precio, $id_vendedor, $fecha);
+
         if (!$id) {
-            return $this->view->showError('Error al generar la venta');
+            return $res->json("Error al insertar venta", 500);
         }
-    
-        header('Location: ' . BASE_URL); 
+        } else {
+            $sellers = $this->modelSeller->getSellers();
+            if (empty($sellers)) {
+                return $res->json('No hay vendedores disponibles.', 404);
+            }
+        }
+        $sale = $this->model->getSaleById($id);
+        return $res->json($sale, 201);
     }
 
 
-    public function updateSale($id, $request) {
-        // Solo admin puede actualizar
-        if (!$request->user || $request->user->rol !== 'administrador') {
-            return $this->view->showError('Acceso denegado. Solo los administradores pueden editar ventas.');
-        }
-    
-        if (empty($_POST['producto']) || empty($_POST['precio']) || empty($_POST['fecha'])) {
-            return $this->view->showError('Faltan datos obligatorios para editar la venta.');
-        }
-    
-        $producto = $_POST['producto'];
-        $precio = $_POST['precio'];
-        $fecha = $_POST['fecha'];
-    
-        $ok = $this->model->updateSale($id, $producto, $precio, $fecha);
-    
-        if (!$ok) {
-            return $this->view->showError('Error al actualizar la venta.');
-        }
-    
-        $this->view->showMessageConfirm('Venta editada correctamente.');
-        header('Location: ' . BASE_URL);
-    }
-    
+    //api/venta/:id (PUT)
+    public function updateSale($req, $res)
+    {
+        $id = $req->params->id_venta;
+        // verifico que exista
+        $sale = $this->model->getSaleById($id);
 
-    public function showFormUpdate($id, $request) {
-        // Solo admin puede acceder
-        if (!$request->user || $request->user->rol !== 'administrador') {
-            return $this->view->showError('Acceso denegado. Solo los administradores pueden editar ventas.');
-        }
-    
-        $sale = $this->model->showSale($id);
-    
         if (!$sale) {
-            return $this->view->showError('Venta no encontrada.');
+            return $res->json("La venta con el id=$id no existe", 404);
         }
-    
-        $this->view->showEditSaleForm($sale);
+
+        // Validación de campos vacíos
+        if (empty($req->body->producto) || empty($req->body->precio) || empty($req->body->fecha) ) {
+            return $res->json('Todos los campos son obligatorios.', 400);
+        }
+
+        $producto = $req->body->producto;
+        $precio = $req->body->precio;
+        $fecha = $req->body->fecha;
+
+
+        // Actualiza la venta
+        $updated = $this->model->updateSale($id, $producto, $precio, $fecha);
+
+        // Verificar si la actualización fue exitosa
+        if ($updated === false) {
+            return $res->json("Hubo un problema al actualizar la venta. Intente nuevamente.", 500);
+        }
+        // obtengo la venta modificada y la devuelvo en la respuesta
+        $sale = $this->model->getSaleById($id);
+        $res->json($sale, 200);
     }
     
-    
-
-    public function deleteSale($id, $request){
+    //api/venta/delete(:id)
+    public function deleteSale($req, $res)
+    {
+        $id = $req->params->id_venta;
+        $sale = $this->model->getSaleById($id);
+        if (!$sale) {
+            return $res->json("El producto con el id=$id no existe", 404);
+        }
         $this->model->deleteSale($id);
-        $this->view->showMessageConfirm("Venta eliminada!");
-
-        
+        $res->json("Venta eliminada", 200);
     }
+
+    
 
 }
