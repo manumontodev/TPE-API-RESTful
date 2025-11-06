@@ -94,8 +94,9 @@ public function getAllSales($req, $res)
     
     // Obtiene ventas con filtros y paginación
     try {
-        $sales = $this->model->getAll($userSortField, $userSortOrder, $filters, $limit, $offset, $params);
-        $totalSales = $this->model->countSales($filters, $params);
+        $sales = $this->model->getAll();
+        $totalSales = count($sales);
+        return $res->json($sales);
         if ($totalSales < 0) {
             $totalSales = 0; // En caso de que haya un error
         }

@@ -31,7 +31,7 @@ $router->addRoute('auth/login',     'GET',     'AuthApiController',    'login');
 $router->addRoute('auth/logout',     'GET',     'AuthApiController',    'logout');
 
 // listar ventas
-$router->addRoute('ventas',         'GET',      'SaleApiController',    'showSales');
+$router->addRoute('ventas',         'GET',      'SaleApiController',    'getAllSales');
 $router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSaleDetail');
 
 // listar vendedores
