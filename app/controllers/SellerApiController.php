@@ -13,29 +13,29 @@ class SellerApiController
         $this->sellerModel = new SellerModel();
     }
 
-    private function validarDatos($request)
+    private function validarDatos($req)
     {
-        $error = null;
+        $error = false;
         // Valida datos obligatorios
-        if (empty($request->body->nombre) || empty($request->body->telefono) || empty($request->body->email))
+        if (empty($req->body->nombre) || empty($req->body->telefono) || empty($req->body->email))
             $error = 'Missing required data';
 
         // Valida el email
-        elseif (!filter_var($request->body->email, FILTER_VALIDATE_EMAIL))
+        elseif (!filter_var($req->body->email, FILTER_VALIDATE_EMAIL))
             $error = 'Invalid email format';
 
         return $error;
     }
 
-    public function insert($request, $res)
+    public function insert($req, $res)
     {
-        $error = $this->validarDatos($request);
+        $error = $this->validarDatos($req);
 
-        if (empty($error)):
+        if (!$error):
             // obtiene los datos del body
-            $nombre = $request->body->nombre;
-            $telefono = $request->body->telefono;
-            $email = $request->body->email;
+            $nombre = $req->body->nombre;
+            $telefono = $req->body->telefono;
+            $email = $req->body->email;
 
             // inserta los datos
             $newId = $this->sellerModel->insert($nombre, $telefono, $email);
@@ -53,20 +53,20 @@ class SellerApiController
         endif;
     }
 
-    public function update($request, $res)
+    public function update($req, $res)
     {
-        $error = $this->validarDatos($request);
+        $error = $this->validarDatos($req);
 
         if ($error)
             return $res->json($error, 400);
 
         // obtiene la id del vendedor
-        $id = $request->params->id;
+        $id = $req->params->id;
 
         // obtiene los datos del body
-        $nombre = $request->body->nombre;
-        $telefono = $request->body->telefono;
-        $email = $request->body->email;
+        $nombre = $req->body->nombre;
+        $telefono = $req->body->telefono;
+        $email = $req->body->email;
 
         // actualiza los datos
         $this->sellerModel->update($id, $nombre, $telefono, $email);
@@ -74,9 +74,9 @@ class SellerApiController
         return $res->json($seller, 200);
     }
 
-    function delete($request, $res)
+    function delete($req, $res)
     {
-        $id = $request->params->id;
+        $id = $req->params->id;
         $seller = $this->sellerModel->getSellerById($id);
 
         if (!$seller)
@@ -89,13 +89,32 @@ class SellerApiController
 
     public function getAll($req, $res)
     {
-        $sellers = $this->sellerModel->getSellers();
+        // toma los query params
+        $sortBy = $req->query->sortBy ?? ''; // si vienen vacios asigno valores default
+        $order = $req->query->order ?? '1';
+
+        // todos los posibles ordenamientos x campo de la tabla
+        $sortBy = match ($sortBy) { // match un switch que no lleva breaks/returns
+            'name' => 'nombre',
+            'email' => 'email',
+            'phone' => 'telefono',
+            default => '' // si llega otra cosa queda string vacío
+        };
+
+        $order = match ($order) {
+            '0' => 'DESC',
+            '1' => 'ASC',
+            default => 'ASC' // si llega otra cosa ordena ASC
+        };
+
+        $sellers = $this->sellerModel->getSellers($sortBy, $order);
         return $res->json($sellers);
     }
 
-    public function get($request, $res)
+
+    public function get($req, $res)
     {
-        $id = $request->params->id;
+        $id = $req->params->id;
         if (!$id)
             return $res->json(["Seller ID no specified", 400]);
         $seller = $this->sellerModel->getSellerById($id);
@@ -119,11 +138,11 @@ class SellerApiController
 
         $sales = $this->saleModel->getSalesBySellerId($id);
         return $res->json($sales);
-        
+
 
     }
 
-    public function methodNotAllowed($request, $res)
+    public function methodNotAllowed($req, $res)
     {
         // devolveria 405 si el method no es valido por ej si manda delete a /vendedores
         return $res->json(['message' => 'Method not allowed'], 405);

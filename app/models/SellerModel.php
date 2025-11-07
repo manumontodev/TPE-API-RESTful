@@ -31,15 +31,23 @@ class SellerModel extends Model
         return count($query->fetchAll()) > 0;
     }
 
-    public function getSellers()
+    public function getSellers($sort = '', $order = 'ASC')
     {
-        $query = $this->db->prepare('SELECT * FROM vendedor');
+        // dejo preparada la consulta sql
+        $sql = "SELECT * FROM vendedor";
+
+        // si me mandaron query params
+        if (!empty($sort))
+            // concatena
+            $sql .= " ORDER BY $sort $order"; // la sanitizacion de estos dos implementa controller
+
+        $query = $this->db->prepare($sql);
         $query->execute();
 
-        $sellers = $query->fetchAll(PDO::FETCH_OBJ);
-
-        return $sellers;
+        return $query->fetchAll(PDO::FETCH_OBJ);
     }
+
+
 
     public function getSellerById($id)
     {
