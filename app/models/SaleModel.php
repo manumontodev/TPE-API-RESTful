@@ -99,7 +99,13 @@ class SaleModel extends Model{
             WHERE v.id_venta = ?
         ');
         $query->execute([(int)$idVenta]);
-        return $query->fetch(PDO::FETCH_OBJ);
+    }
+
+    public function getSalesBySellerId($id){
+        $query = $this->db->prepare('SELECT * FROM venta WHERE id_vendedor = ?');
+        $query->execute([$id]);
+        return $query->fetchAll(PDO::FETCH_OBJ);
+
     }
 
 

@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // nota mental chequear que todas los endpoints sean RESTful
 $router = new Router();
+$router->addMiddleware(new JWTMiddleware());
 
 // Login
 $router->addRoute('auth/login',     'GET',     'AuthApiController',    'login');
@@ -40,10 +41,10 @@ $router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'dele
 // listar vendedores
 $router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
 $router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
+$router->addRoute('vendedores/:id/ventas',     'GET',      'SellerApiController',    'getSales');
 
 
 
-$router->addMiddleware(new JWTMiddleware());
 $router->addMiddleware(new GuardApiMiddleware());
 
 

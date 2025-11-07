@@ -1,9 +1,11 @@
 <?php
 require_once 'app/models/SellerModel.php';
+require_once 'app/models/SaleModel.php';
 
 class SellerApiController
 {
     public $sellerModel;
+    public $saleModel;
 
 
     function __construct()
@@ -57,7 +59,7 @@ class SellerApiController
 
         if ($error)
             return $res->json($error, 400);
-        
+
         // obtiene la id del vendedor
         $id = $request->params->id;
 
@@ -103,6 +105,22 @@ class SellerApiController
             return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
 
         return $res->json($seller);
+    }
+
+    public function getSales($req, $res)
+    {
+        $id = $req->params->id;
+        $seller = $this->sellerModel->getSellerById($id);
+        // verifica que exista el vendedor
+        if (!$seller)
+            return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
+
+        $this->saleModel = new SaleModel();
+
+        $sales = $this->saleModel->getSalesBySellerId($id);
+        return $res->json($sales);
+        
+
     }
 
     public function methodNotAllowed($request, $res)
