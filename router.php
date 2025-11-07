@@ -33,7 +33,10 @@ $router->addRoute('auth/logout',     'GET',     'AuthApiController',    'logout'
 // listar ventas
 $router->addRoute('ventas',         'GET',      'SaleApiController',    'getAllSales');
 $router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSaleDetail');
-
+// metodos ABM ventas
+$router->addRoute('ventas',     'POST',      'SaleApiController',    'addSale');
+$router->addRoute('ventas/:id',     'PUT',      'SaleApiController',    'updateSale');
+$router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'deleteSale');
 // listar vendedores
 $router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
 $router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
@@ -43,10 +46,6 @@ $router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'g
 $router->addMiddleware(new JWTMiddleware());
 $router->addMiddleware(new GuardApiMiddleware());
 
-// metodos ABM ventas
-$router->addRoute('ventas',     'POST',      'SaleApiController',    'addSale');
-$router->addRoute('ventas/:id',     'PUT',      'SaleApiController',    'updateSale');
-$router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'deleteSale');
 
 // metodos ABM vendedores
 $router->addRoute('vendedores',     'POST',   'SellerApiController',    'insert');

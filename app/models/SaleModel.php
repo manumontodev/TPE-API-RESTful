@@ -34,17 +34,53 @@ class SaleModel extends Model{
         return count($query->fetchAll()) > 0;
     }
     
-    public function getAll() {
-        $query = $this->db->prepare('
-            SELECT v.*, ve.nombre AS vendedor
-            FROM venta v
-            JOIN vendedor ve ON v.id_vendedor = ve.id
-        ');
-        $query->execute();
-        return $query->fetchAll(PDO::FETCH_OBJ);
+    public function getAll($userSortField, $userSortOrder, $filters, $limit, $offset, $params) {
+      // Construye la consulta SQL
+      $sql = "SELECT * FROM venta";
+
+      // Agrega filtros si existen
+      if (!empty($filters)) {
+          $sql .= " WHERE " . implode(" AND ", $filters); //.= agrega esta nueva parte al final de la cadena existente en $sql. implode convierte array en cadena texto
+      }
+
+      // Agrega ordenamiento y limit
+      $sql .= " ORDER BY $userSortField $userSortOrder LIMIT :limit OFFSET :offset";
+
+      $query = $this->db->prepare($sql);
+
+      // Vincula parámetros
+      foreach ($params as $key => $value) {
+          $query->bindValue($key, $value); //En PHP, bindValue es un método que se utiliza en consultas preparadas para asociar un valor específico a un parámetro de la consulta SQL antes de ejecutarla
+      }
+
+      // Vincula límite y offset
+      $query->bindValue(':limit', $limit, PDO::PARAM_INT); //:limit y :offset son marcadores de posición para parámetros en una consulta SQL. El símbolo : indica que limit y offset son parámetros que se enlazarán (o vincularán) a valores específicos más adelante en el código.
+      $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+      $query->execute();
+
+      // Retorna resultados como objetos
+      return $query->fetchAll(PDO::FETCH_OBJ);
     }
 
-    // devuelve array de ventas por vendedor
+    public function countSales($filters, $params = []) {
+        $sql = "SELECT COUNT(*) FROM venta";
+        if (!empty($filters)) {
+            $sql .= " WHERE " . implode(" AND ", $filters);
+        }
+    
+        $query = $this->db->prepare($sql);
+    
+        foreach ($params as $key => $value) {
+            $query->bindValue($key, $value);
+        }
+    
+        $query->execute();
+        return $query->fetchColumn();
+    }
+    
+
+
     public function getSalesById($sellerId){
         $query = $this->db->prepare('SELECT * FROM `venta` WHERE `id_vendedor` = ? ORDER BY `id_venta` ASC');
         $query->execute([(int)$sellerId]);
@@ -64,16 +100,6 @@ class SaleModel extends Model{
         ');
         $query->execute([(int)$idVenta]);
         return $query->fetch(PDO::FETCH_OBJ);
-    }
-    
-    
-    public function showSale($id){
-        $query = $this->db->prepare('SELECT * FROM venta WHERE `id_venta` = ?'); 
-        $query->execute([$id]);
-
-        $sale = $query->fetch(PDO::FETCH_OBJ);
-
-        return $sale;
     }
 
 
