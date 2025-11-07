@@ -4,7 +4,6 @@ require_once 'app/models/SellerModel.php';
 class SellerApiController
 {
     public $sellerModel;
-    private const MAX_SIZE = 4 * 1024 * 1024; // tamaño maximo de la imagen = 4 MB
 
 
     function __construct()
@@ -99,7 +98,7 @@ class SellerApiController
             return $res->json(["Seller ID no specified", 400]);
         $seller = $this->sellerModel->getSellerById($id);
 
-        // verifico que exista el vendedor
+        // verifica que exista el vendedor
         if (!$seller)
             return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
 
