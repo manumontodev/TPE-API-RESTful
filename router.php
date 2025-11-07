@@ -32,7 +32,7 @@ $router->addRoute('auth/logout',     'GET',     'AuthApiController',    'logout'
 
 // listar ventas
 $router->addRoute('ventas',         'GET',      'SaleApiController',    'getAllSales');
-$router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSaleDetail');
+$router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSale');
 // metodos ABM ventas
 $router->addRoute('ventas',     'POST',      'SaleApiController',    'addSale');
 $router->addRoute('ventas/:id',     'PUT',      'SaleApiController',    'updateSale');

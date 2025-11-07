@@ -129,7 +129,7 @@ public function getAllSales($req, $res)
     //api/venta/:id (GET)
     public function showSale($req, $res)
     {
-        $id = $req->params->id_venta;
+        $id = $req->params->id;
 
         // Validar que id_venta no esté vacío y sea un número entero positivo
         if (empty($id) || !is_numeric($id) || $id <= 0) {
