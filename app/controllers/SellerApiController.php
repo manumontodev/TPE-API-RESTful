@@ -14,13 +14,9 @@ class SellerApiController
 
     private function validarDatos($request)
     {
-        $error = false;
-        // cuando la imagen es demasiado muy grande php rechaza el POST y lo envia vacio
-        if (empty($request) && empty($_FILES))
-            $error = 'Image size too big';
-
+        $error = null;
         // Valida datos obligatorios
-        elseif (empty($request->body->nombre) || empty($request->body->telefono) || empty($request->body->email))
+        if (empty($request->body->nombre) || empty($request->body->telefono) || empty($request->body->email))
             $error = 'Missing required data';
 
         // Valida el email
@@ -30,44 +26,16 @@ class SellerApiController
         return $error;
     }
 
-    private function validarImagen($request, $res)
-    {
-        if (empty($_FILES['imagen']['tmp_name']) || $_FILES['imagen']['error'] != UPLOAD_ERR_OK)
-            return false;
-
-        $mime = mime_content_type($_FILES['imagen']['tmp_name']);
-
-        if (!in_array($mime, ['image/jpeg', 'image/png']))
-            return false;
-
-        if ($_FILES['imagen']['size'] > self::MAX_SIZE)
-            return false;
-
-        return true;
-    }
-
     public function insert($request, $res)
     {
         $error = $this->validarDatos($request);
 
-        if (!$error):
+        if (empty($error)):
             // obtiene los datos del body
             $nombre = $request->body->nombre;
             $telefono = $request->body->telefono;
             $email = $request->body->email;
-            $img = null;
 
-
-
-            /* si viene una imagen, la valida
-            if (!empty($_FILES['imagen']['tmp_name'])) {
-                $validation = $this->validarImagen($request, $res);
-                if (!$validation)
-                    return $res->json(['error' => 'Invalid media type', 'message' => 'Only JPG/PNG and size limit allowed'], 400);
-            }
-            // si paso la sube al sv
-            $img = $request->body->imagen;
-            */
             // inserta los datos
             $newId = $this->sellerModel->insert($nombre, $telefono, $email);
 
@@ -115,14 +83,6 @@ class SellerApiController
 
         $this->sellerModel->delete($id);
         return $res->json('Seller deleted', 204);
-    }
-
-    // sube la img al servidor y devuelve la ruta
-    private function uploadImg($img)
-    {
-        $target = "img/" . uniqid() . "." . strtolower(pathinfo($img['name'], PATHINFO_EXTENSION));
-        move_uploaded_file($img['tmp_name'], $target);
-        return $target;
     }
 
 
