@@ -3,6 +3,7 @@ require_once './libs/router/router.php';
 require_once './app/controllers/SellerApiController.php';
 require_once './app/controllers/SaleApiController.php';
 require_once './app/controllers/AuthApiController.php';
+require_once './app/controllers/ErrorApiController.php';
 require_once './libs/jwt/jwt.middleware.php';
 require_once './app/middlewares/GuardApiMiddleware.php';
 
@@ -20,8 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
-
-
 
 // nota mental chequear que todas los endpoints sean RESTful
 $router = new Router();
@@ -41,17 +40,24 @@ $router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'dele
 // listar vendedores
 $router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
 $router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
-$router->addRoute('vendedores/:id/ventas',     'GET',      'SellerApiController',    'getSales');
-
+$router->addRoute('vendedores/:id/ventas',     'GET',      'SellerApiController',    'getSalesById');
 
 
 $router->addMiddleware(new GuardApiMiddleware());
-
-
 // metodos ABM vendedores
 $router->addRoute('vendedores',     'POST',   'SellerApiController',    'insert');
 $router->addRoute('vendedores/:id',     'PUT',      'SellerApiController',    'update');
 $router->addRoute('vendedores/:id',     'DELETE',      'SellerApiController',    'delete');
 
+// manejo -por ahora manualmente- endpoints con metodos no permitidos
+$router->addRoute('vendedores',     'PUT',   'ErrorApiController',    'not_allowed');
+$router->addRoute('vendedores',     'DELETE',   'ErrorApiController',    'not_allowed');
+$router->addRoute('vendedores/:id',     'POST',      'ErrorApiController',    'not_allowed');
+$router->addRoute('vendedores/:id/ventas',     'PUT',   'ErrorApiController',    'not_allowed');
+$router->addRoute('vendedores/:id/ventas',     'DELETE',   'ErrorApiController',    'not_allowed');
+$router->addRoute('vendedores/:id/ventas',     'POST',      'ErrorApiController',    'not_allowed');
+
+// ruta por defecto
+$router->setDefaultRoute('ErrorApiController', 'not_found');
 
 $router->route($_GET["resource"], $_SERVER['REQUEST_METHOD']);
