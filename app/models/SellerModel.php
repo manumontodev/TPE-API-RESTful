@@ -5,13 +5,13 @@ class SellerModel extends Model
 
     protected function createTable()
     {
-        $this->db->exec(
+        $this->db->exec( // subo imagen a (300) por si pinta permitir URLs
             "CREATE TABLE IF NOT EXISTS `vendedor` (
                 `id` int(11) NOT NULL AUTO_INCREMENT,
                 `nombre` varchar(100) NOT NULL,
                 `telefono` varchar(20) NOT NULL,
                 `email` varchar(200) NOT NULL,
-                `imagen` varchar(50) NOT NULL,
+                `imagen` varchar(300) NOT NULL,
                 PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
         );
@@ -31,15 +31,14 @@ class SellerModel extends Model
         return count($query->fetchAll()) > 0;
     }
 
-    public function getSellers($sort = '', $order = 'ASC')
+    public function getSellers($sort, $order)
     {
         // dejo preparada la consulta sql
-        $sql = "SELECT * FROM vendedor";
+        $sql = "SELECT * FROM `vendedor`"; 
 
-        // si me mandaron query params
-        if (!empty($sort))
-            // concatena
-            $sql .= " ORDER BY $sort $order"; // la sanitizacion de estos dos implementa controller
+        // concatena c/la consulta
+        if (!empty($sort) || !empty($order))
+            $sql .= "ORDER BY $sort $order";
 
         $query = $this->db->prepare($sql);
         $query->execute();
@@ -82,8 +81,8 @@ class SellerModel extends Model
             $path = $img;
         else
             $path = 'img/default-user-img.jpg';
-        $query = $this->db->prepare("INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email` ) VALUES (NULL, ?, ?, ?)");
-        $query->execute([$nombre, $telefono, $email]);
+        $query = $this->db->prepare("INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email`, `imagen` ) VALUES (NULL, ?, ?, ?, ?)");
+        $query->execute([$nombre, $telefono, $email, $path]);
         return $this->db->lastInsertId();
     }
 }

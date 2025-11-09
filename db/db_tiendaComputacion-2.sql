@@ -55,7 +55,7 @@ CREATE TABLE `vendedor` (
   `nombre` varchar(300) NOT NULL,
   `telefono` int(11) NOT NULL,
   `email` varchar(300) NOT NULL,
-  `imagen` varchar(50)
+  `imagen` varchar(300)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
 
 --
