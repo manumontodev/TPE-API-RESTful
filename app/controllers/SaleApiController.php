@@ -5,131 +5,101 @@ require_once 'app/models/SellerModel.php';
 class SaleApiController {
     private $model;
     private $modelSeller;
-    private $page;
-    private $limit;
 
     function __construct($page = 1, $limit = 3) {
         $this->modelSeller = new SellerModel(); 
         $this->model = new SaleModel();
-        // Se inician las propiedades de clase para la paginación
-        $this->page = $page;
-        $this->limit = $limit;
     }
 
 //api/venta
 public function getAllSales($req, $res)
 {
-    // Parámetros permitidos que acepta la API. Se colocan manualmente como una forma de proteger la API
-    $allowedParams = ['sortField', 'sortOrder', 'page', 'limit', 'min_price', 'max_price', 'id_vendedor', 'resource', 'id_venta'];
-
-    // Obtener parámetros de la solicitud
-    $queryParams = array_keys($_GET);
-
-    // Verificar si hay parámetros no permitidos
-    foreach ($queryParams as $param) {
-        if (!in_array($param, $allowedParams)) {
-            return $res->json('Parámetro no permitido: ' . $param, 400);
-        }
-    }
-    // Ordenamiento
-    $sortFields = ['precio', 'id_vendedor'];
-
-    $userSortField = isset($_GET['sortField']) ? $_GET['sortField'] : null;
-
-    // Validar que sortField sea válido
-    if ($userSortField && !in_array($userSortField, $sortFields)) {
-        return $res->json('Campo de ordenamiento no permitido: ' . $userSortField, 400);
-    }
-
-    // Usar el campo de ordenamiento por defecto si no se proporciona
-    $userSortField = $userSortField ?: 'precio';
-    // Obtiene el parámetro de orden del usuario (asc o desc) usando $_GET y usa 'asc' por defecto
-    $userSortOrder = isset($_GET['sortOrder']) && $_GET['sortOrder'] === 'desc' ? 'desc' : 'asc';
-
-    // Paginación
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : $this->page;
-    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : $this->limit;
-    
-    // Validación de la página
-    if ($page < 1) {
-        $page = 1; // Fuerza a la primera página si se proporciona un valor menor
-    }
-    
-    // Validación del límite
-    if ($limit < 1) {
-        $limit = 5; // Establece un límite predeterminado
-    }
-    
-    // Cálculo del offset
-    $offset = ($page - 1) * $limit;
-    
-    // Filtros
-    $filters = [];
-    $params = [];
-    
-    // Filtra por precio
-    if (isset($_GET['min_price'])) {
-        $minPrice = filter_var($_GET['min_price'], FILTER_VALIDATE_FLOAT); //filter_var verifica y sanitiza
-        if ($minPrice !== false) {
-            $filters[] = "precio >= :min_price"; // :min_price marcador de posicion que será usado después
-            $params[':min_price'] = $minPrice; // Agrega parámetro
-        }
-    }
-    
-    if (isset($_GET['max_price'])) {
-        $maxPrice = filter_var($_GET['max_price'], FILTER_VALIDATE_FLOAT);
-        if ($maxPrice !== false) {
-            $filters[] = "precio <= :max_price"; // Usa la columna "precio"
-            $params[':max_price'] = $maxPrice; // Agrega parámetro
-        }
-    }
-    if (isset($_GET['id_vendedor'])) {
-        $idVendedor = filter_var($_GET['id_vendedor'], FILTER_VALIDATE_INT);
-        if ($idVendedor === false) {
-            return $res->json('ID de vendedor inválido. Debe ser un número entero.', 400);
-        }
-        $filters[] = "id_vendedor = :id_vendedor";
-        $params[':id_vendedor'] = $idVendedor;
-    }
-    
-    // Obtiene ventas con filtros y paginación
     try {
-        $sales = $this->model->getAll($userSortField, $userSortOrder, $filters, $limit, $offset, $params);
-        $totalSales = count($sales);
-        return $res->json($sales);
-        if ($totalSales < 0) {
-            $totalSales = 0; // En caso de que haya un error
+        // Ordenamiento 
+        $allowedSortFields = ['id_venta', 'producto', 'precio', 'id_vendedor', 'fecha'];
+
+        // Campo y orden de ordenamiento enviados por el usuario
+        $sortField = $_GET['sortField'] ?? 'id_venta';  // Por defecto ordena por id_venta
+        $sortOrder = (isset($_GET['sortOrder']) && $_GET['sortOrder'] === 'desc') ? 'desc' : 'asc';
+
+        // Validar campo permitido
+        if (!in_array($sortField, $allowedSortFields)) {
+            return $res->json("Campo de ordenamiento no permitido: $sortField", 400);
         }
-    
-        // Para cada venta, obtiene el vendedor
+
+        // Paginacion
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : ($this->page ?? 1);
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : ($this->limit ?? 5);
+
+        if ($page < 1) $page = 1;
+        if ($limit < 1) $limit = 5;
+
+        $offset = ($page - 1) * $limit;
+
+        // Filtros opcionales 
+        $filters = [];
+        $params = [];
+
+        if (isset($_GET['min_price'])) {
+            $minPrice = filter_var($_GET['min_price'], FILTER_VALIDATE_FLOAT);
+            if ($minPrice !== false) {
+                $filters[] = "precio >= :min_price";
+                $params[':min_price'] = $minPrice;
+            }
+        }
+
+        if (isset($_GET['max_price'])) {
+            $maxPrice = filter_var($_GET['max_price'], FILTER_VALIDATE_FLOAT);
+            if ($maxPrice !== false) {
+                $filters[] = "precio <= :max_price";
+                $params[':max_price'] = $maxPrice;
+            }
+        }
+
+        if (isset($_GET['id_vendedor'])) {
+            $idVendedor = filter_var($_GET['id_vendedor'], FILTER_VALIDATE_INT);
+            if ($idVendedor === false) {
+                return $res->json('ID de vendedor inválido. Debe ser un número entero.', 400);
+            }
+            $filters[] = "id_vendedor = :id_vendedor";
+            $params[':id_vendedor'] = $idVendedor;
+        }
+
+        // consulta al modelo
+        $sales = $this->model->getAll($sortField, $sortOrder, $filters, $limit, $offset, $params);
+        $totalSales = $this->model->countSales($filters, $params);
+
         foreach ($sales as &$sale) {
             $seller = $this->modelSeller->getSellerById($sale->id_vendedor);
-            $sale->id_vendedor = $seller ?  $seller->id_vendedor  : 'Desconocido';
+            $sale->vendedor = $seller ? $seller->nombre : 'Desconocido';
         }
-    
+
+        // resultado
         $response = [
             'ventas' => $sales,
             'pagina' => $page,
             'limite' => $limit,
             'total_ventas' => $totalSales,
-            'total_paginas' => ceil($totalSales / $limit),
+            'total_paginas' => ceil($totalSales / $limit), //funcion de php para redondear para arriba
+            'ordenado_por' => $sortField,
+            'orden' => strtoupper($sortOrder)
         ];
-        $res->setStatusCode(200);
-        $res->setBody($response);
-        return $res->send();
-        } catch (Exception $e) {
-            $res->setStatusCode(500);
-            $res->setBody(['error' => $e->getMessage()]);
-            return $res->send();
-        }
+
+        return $res->json($response, 200);
+
+    } catch (Exception $e) {
+        return $res->json(['error' => 'Error interno del servidor.'], 500);
     }
+}
+
+
 
 
     
     //api/venta/:id (GET)
     public function showSale($req, $res)
     {
-        $id = $req->params->id; // viene por request desde la URL ventas/:id, estaba como id_ventas
+        $id = $req->params->id; 
 
         // Validar que id_venta no esté vacío y sea un número entero positivo
         if (empty($id) || !is_numeric($id) || $id <= 0) {
@@ -148,8 +118,37 @@ public function getAllSales($req, $res)
     public function addSale($req, $res){  
          //valido datos
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (empty($req->body->producto) || empty($req->body->precio) || empty($req->body->id_vendedor) || empty($req->body->fecha)) {
-                return $res->json('Todos los campos son obligatorios.', 400);
+            if (empty($producto)) {
+                return $res->json('El campo "inmueble" es obligatorio.', 400);
+            }
+   
+            if (empty($precio)) {
+               return $res->json('El campo "precio" es obligatorio.', 400);
+           }
+   
+           if (empty($id_vendedor)) {
+               return $res->json('El campo "id_vendedor" es obligatorio.', 400);
+           }
+   
+            if (empty($fecha)) {
+                return $res->json('El campo "fecha" es obligatorio.', 400);
+            }
+   
+           // Validar que el precio sea un número positivo
+           if (!is_numeric($precio) || $precio <= 0) {
+               return $res->json('El precio debe ser un número positivo.', 400);
+           }
+   
+           // Validar que el ID del vendedor sea un número positivo
+           if (!is_numeric($id_vendedor) || $id_vendedor <= 0) {
+               return $res->json('El ID del vendedor no es válido.', 400);
+           }
+   
+           // Verifica si el vendedor existe
+           if (!$this->modelSeller->getSellerById($id_vendedor)) {
+               return $res->json('No hay vendedores disponibles con ese ID.', 404);
+           }
+
         }
          //obtengo datos
          $producto = $req->body->producto;
@@ -157,51 +156,13 @@ public function getAllSales($req, $res)
          $id_vendedor = $req->body->id_vendedor;
          $fecha = $req->body->fecha;
 
-
-         // Validar que los campos obligatorios no estén vacíos
-         if (empty($producto)) {
-             return $res->json('El campo "inmueble" es obligatorio.', 400);
-         }
-
-         if (empty($precio)) {
-            return $res->json('El campo "precio" es obligatorio.', 400);
-        }
-
-        if (empty($id_vendedor)) {
-            return $res->json('El campo "id_vendedor" es obligatorio.', 400);
-        }
-
-         if (empty($fecha)) {
-             return $res->json('El campo "fecha" es obligatorio.', 400);
-         }
-
-        // Validar que el precio sea un número positivo
-        if (!is_numeric($precio) || $precio <= 0) {
-            return $res->json('El precio debe ser un número positivo.', 400);
-        }
-
-        // Validar que el ID del vendedor sea un número positivo
-        if (!is_numeric($id_vendedor) || $id_vendedor <= 0) {
-            return $res->json('El ID del vendedor no es válido.', 400);
-        }
-
-        // Verifica si el vendedor existe
-        if (!$this->modelSeller->getSellerById($id_vendedor)) {
-            return $res->json('No hay vendedores disponibles con ese ID.', 404);
-        }
-
         //inserto datos
         $id = $this->model->insert($producto, $precio, $id_vendedor, $fecha);
 
         if (!$id) {
             return $res->json("Error al insertar venta", 500);
         }
-        } else {
-            $sellers = $this->modelSeller->getSellers();
-            if (empty($sellers)) {
-                return $res->json('No hay vendedores disponibles.', 404);
-            }
-        }
+    
         $sale = $this->model->getSaleById($id);
         return $res->json($sale, 201);
     }
