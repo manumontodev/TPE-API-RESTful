@@ -65,8 +65,18 @@ CREATE TABLE `vendedor` (
 INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email`, `imagen`) VALUES
 (1, 'Lucia M', 2494001, 'lucia@tienda.com', 'img/default-user-img.jpg'),
 (2, 'Manuel', 2494002, 'manuel@tienda.com', 'img/68f2920fb3b78.png'),
-(3, 'Carlos', 2494678, 'carlos@tienda.com', 'img/default-user-img.jpg'),
-(4, 'Pepito', 1234321, 'pepito@tienda.com', 'img/default-user-img.jpg');
+(3, 'Carlos', 2494003, 'carlos@tienda.com', 'img/default-user-img.jpg'),
+(4, 'Pepito', 2494004, 'pepito@tienda.com', 'img/default-user-img.jpg');
+(5, 'Juanita', 2494005, 'juanita@tienda.com', 'img/default-user-img.jpg');
+(6, 'Ximena', 2214001, 'ximena@tienda.com', 'img/default-user-img.jpg');
+(7, 'Panchito', 2214002, 'panchito@tienda.com', 'img/default-user-img.jpg');
+(8, 'Zoe', 2214003, 'zoe@tienda.com', 'img/default-user-img.jpg');
+(9, 'Roberto', 2214004, 'rober@tienda.com', 'img/default-user-img.jpg');
+(10, 'Fernanda', 2214005, 'fernanda@tienda.com', 'img/default-user-img.jpg');
+(11, 'ultimo', 123456, 'vendedor@tienda.com', 'img/default-user-img.jpg');
+
+
+
 
 -- --------------------------------------------------------
 
@@ -87,15 +97,47 @@ CREATE TABLE `venta` (
 --
 
 INSERT INTO `venta` (`id_venta`, `producto`, `precio`, `id_vendedor`, `fecha`) VALUES
-(1, 'Monitor Smart HD Samsung', 310900.00, 1, '2025-10-01'),
-(2, 'Teclado Mecanico Logitech', 3900.00, 2, '2025-10-06'),
-(3, 'Parlante JBL Autotune', 8900.00, 1, '2025-10-02'),
-(4, 'Mouse Inalámbrico Apple', 100900.00, 1, '2025-10-02'),
-(5, 'Impresora Epson Stylus 2000', 189000.00, 2, '2025-08-07'),
-(6, 'Microfono Influencer ', 89000.00, 1, '2025-10-03'),
-(7, 'Luz led para selfie ', 9000.00, 2, '2025-09-12'),
-(8, 'Modem Router Huawei HG8145V5', 84000.06, 3, '2025-09-15'),
-(9, 'Raspberry Pi SBC 8GB', 169000.26, 4, '2025-09-15');
+    (1, 'Monitor Smart HD Samsung', 310900.00, 1, '2025-10-01'),
+    (2, 'Teclado Mecanico Logitech', 3900.00, 2, '2025-10-06'),
+    (3, 'Parlante JBL Autotune', 8900.00, 1, '2025-10-02'),
+    (4, 'Mouse Inalámbrico Apple', 100900.00, 1, '2025-10-02'),
+    (5, 'Impresora Epson Stylus 2000', 189000.00, 2, '2025-08-07'),
+    (6, 'Microfono Influencer', 89000.00, 1, '2025-10-03'),
+    (7, 'Luz led para selfie', 9000.00, 2, '2025-09-12'),
+    (8, 'Modem Router Huawei HG8145V5', 84000.06, 3, '2025-09-15'),
+    (9, 'Raspberry Pi SBC 8GB', 169000.26, 4, '2025-09-15'),
+    (10, 'Joystick Playstation 5', 120000.00, 1, '2025-10-15'),
+    (11, 'Focusrite Scarlett Solo', 299999.99, 1, '2025-10-12'),
+    (12, 'Smartwatch Garmin Venu', 120000.00, 5, '2025-10-18'),
+    (13, 'Auriculares Sony WH-1000XM5', 98000.00, 5, '2025-10-19'),
+    (14, 'Teclado Mecánico Redragon', 18000.00, 6, '2025-10-18'),
+    (15, 'Mouse Logitech MX Master 3', 25000.00, 6, '2025-10-19'),
+    (16, 'Webcam Razer Kiyo', 22000.00, 6, '2025-10-20'),
+    (17, 'Cámara Instantánea Fujifilm', 32000.00, 7, '2025-10-21'),
+    (18, 'Micrófono USB Blue Yeti', 65000.00, 7, '2025-10-21'),
+    (19, 'Tablet Xiaomi Pad 6', 145000.00, 8, '2025-10-22'),
+    (20, 'Parlante JBL Charge 5', 28000.00, 8, '2025-10-23'),
+    (21, 'Mousepad Gamer XXL', 5000.00, 8, '2025-10-24'),
+    (22, 'Raspberry Pi 5 Model B', 189000.00, 9, '2025-10-23'),
+    (23, 'Cargador Inalámbrico Belkin', 4000.00, 9, '2025-10-24'),
+    (24, 'Auriculares HyperX Cloud II', 35000.00, 10, '2025-10-24'),
+    (25, 'Teclado Logitech G915', 92000.00, 10, '2025-10-24'),
+    (26, 'Altavoz Inteligente Google Nest', 18000.00, 11, '2025-10-25'),
+    (27, 'Disco SSD Western Digital 2TB', 54000.00, 11, '2025-10-25'),
+    (28, 'Micrófono Shure SM7B', 125000.00, 12, '2025-10-26'),
+    (36, 'Auriculares Inalámbricos JBL Tune 230', 14500.00, 5, '2025-10-30'),
+    (37, 'Cargador Portátil Anker 20000mAh', 9200.00, 5, '2025-11-01'),
+    (38, 'Teclado Mecánico Keychron K2', 28000.00, 6, '2025-10-29'),
+    (39, 'Monitor Samsung Curvo 27"', 175000.00, 7, '2025-10-30'),
+    (40, 'Mouse Gamer Razer Viper', 18500.00, 7, '2025-11-01'),
+    (41, 'Webcam Logitech StreamCam', 37000.00, 7, '2025-11-02'),
+    (42, 'Micrófono Condensador Behringer', 75000.00, 8, '2025-10-28'),
+    (43, 'Parlante Bluetooth Sony SRS-XB33', 25000.00, 9, '2025-10-31'),
+    (44, 'Raspberry Pi 4 8GB', 165000.00, 9, '2025-11-01'),
+    (45, 'Tablet Samsung Galaxy Tab S7', 215000.00, 10, '2025-10-29'),
+    (46, 'Altavoz Inteligente Amazon Echo', 22000.00, 11, '2025-10-30'),
+    (47, 'Mousepad Gamer XL', 3500.00, 11, '2025-11-01'),
+    (48, 'Auriculares HyperX Cloud II', 35000.00, 11, '2025-11-02');
 
 --
 -- Índices para tablas volcadas
