@@ -7,10 +7,6 @@ require_once './app/controllers/ErrorApiController.php';
 require_once './libs/jwt/jwt.middleware.php';
 require_once './app/middlewares/GuardApiMiddleware.php';
 
-
-
-
-
 // Permitir solicitudes desde cualquier origen (solo para probar frontend)
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -22,42 +18,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+
 // nota mental chequear que todas los endpoints sean RESTful
 $router = new Router();
 $router->addMiddleware(new JWTMiddleware());
+
+// ruta por defecto
+$router->setDefaultRoute('ErrorApiController', 'not_found');
+
+// manejo de metodos no permitidos
+require_once './app/config/routes.php';
 
 // Login
 $router->addRoute('auth/login',     'GET',     'AuthApiController',    'login');
 $router->addRoute('auth/logout',     'GET',     'AuthApiController',    'logout');
 
-// listar ventas
+//  ventas
 $router->addRoute('ventas',         'GET',      'SaleApiController',    'getAllSales');
 $router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSale');
-// metodos ABM ventas
+
+//  vendedores
+$router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
+$router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
+
+
+// metodos ABM 
+$router->addMiddleware(new GuardApiMiddleware());
+
 $router->addRoute('ventas',     'POST',      'SaleApiController',    'addSale');
 $router->addRoute('ventas/:id',     'PUT',      'SaleApiController',    'updateSale');
 $router->addRoute('ventas/:id',     'DELETE',      'SaleApiController',    'deleteSale');
-// listar vendedores
-$router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
-$router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
-$router->addRoute('vendedores/:id/ventas',     'GET',      'SellerApiController',    'getSalesById');
 
-
-$router->addMiddleware(new GuardApiMiddleware());
-// metodos ABM vendedores
 $router->addRoute('vendedores',     'POST',   'SellerApiController',    'insert');
 $router->addRoute('vendedores/:id',     'PUT',      'SellerApiController',    'update');
 $router->addRoute('vendedores/:id',     'DELETE',      'SellerApiController',    'delete');
 
-// manejo -por ahora manualmente- endpoints con metodos no permitidos
-$router->addRoute('vendedores',     'PUT',   'ErrorApiController',    'not_allowed');
-$router->addRoute('vendedores',     'DELETE',   'ErrorApiController',    'not_allowed');
-$router->addRoute('vendedores/:id',     'POST',      'ErrorApiController',    'not_allowed');
-$router->addRoute('vendedores/:id/ventas',     'PUT',   'ErrorApiController',    'not_allowed');
-$router->addRoute('vendedores/:id/ventas',     'DELETE',   'ErrorApiController',    'not_allowed');
-$router->addRoute('vendedores/:id/ventas',     'POST',      'ErrorApiController',    'not_allowed');
-
-// ruta por defecto
-$router->setDefaultRoute('ErrorApiController', 'not_found');
 
 $router->route($_GET["resource"], $_SERVER['REQUEST_METHOD']);
