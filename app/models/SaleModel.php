@@ -81,17 +81,22 @@ class SaleModel extends Model{
     
 
 
-    public function getSalesById($sellerId){
-        $query = $this->db->prepare('SELECT * FROM `venta` WHERE `id_vendedor` = ? ORDER BY `id_venta` ASC');
+    public function getSalesById($sellerId, $page, $_size){ // obtiene las ventas de un vendedor, puede paginar
+        $sql = 'SELECT * FROM `venta` WHERE `id_vendedor` = ?';
+        if (!empty($page && $page > 0)) {
+            $page = ($page - 1) * $_size;
+            $sql .= " LIMIT $page,$_size";
+        }
+
+        $query = $this->db->prepare($sql);
         $query->execute([(int)$sellerId]);
 
         $sales = $query->fetchAll(PDO::FETCH_OBJ);
 
-        return $sales;
+        return $sales; // no hacia return
     }
-
     
-    public function getSaleById($idVenta) {
+    public function getSaleById($idVenta) { // obtiene una venta por su ID
         $query = $this->db->prepare('
             SELECT v.*, s.nombre AS nombre
             FROM venta v
@@ -99,15 +104,8 @@ class SaleModel extends Model{
             WHERE v.id_venta = ?
         ');
         $query->execute([(int)$idVenta]);
+        return $query->fetch(PDO::FETCH_OBJ);
     }
-
-    public function getSalesBySellerId($id){
-        $query = $this->db->prepare('SELECT * FROM venta WHERE id_vendedor = ?');
-        $query->execute([$id]);
-        return $query->fetchAll(PDO::FETCH_OBJ);
-
-    }
-
 
     public function insert($producto, $precio, $vendedor, $fecha){
         $query = $this->db->prepare('INSERT INTO venta(producto, precio, id_vendedor, fecha) VALUES (?,?,?,?)');
