@@ -1,150 +1,173 @@
 <?php
-require_once 'app/models/SellerModel.php';
+require_once 'app/models/sellerModel.php';
 require_once 'app/models/SaleModel.php';
 
-class SellerApiController
+class sellerApiController
 {
-    public $sellerModel;
-    public $saleModel;
-
+    private $sellerModel;
+    private $saleModel;
+    private const INVALID_ID = ['Syntax error' => 'Provided ID is not a valid ID'];
+    private const INVALID_PAGE = ['Syntax error' => 'Invalid page number'];
 
     function __construct()
     {
         $this->sellerModel = new SellerModel();
+        $this->saleModel = new SaleModel();
     }
 
-    private function validarDatos($req)
+    /* ------------ FUNCIONES CRUD ------------ */
+    public function insert($req, $res) // insertar vendedor
     {
-        $error = false;
-        // Valida datos obligatorios
-        if (empty($req->body->nombre) || empty($req->body->telefono) || empty($req->body->email))
-            $error = 'Missing required data';
-
-        // Valida el email
-        elseif (!filter_var($req->body->email, FILTER_VALIDATE_EMAIL))
-            $error = 'Invalid email format';
-
-        return $error;
-    }
-
-    public function insert($req, $res)
-    {
-        $error = $this->validarDatos($req);
-
-        if (!$error):
-            // obtiene los datos del body
-            $nombre = $req->body->nombre;
-            $telefono = $req->body->telefono;
-            $email = $req->body->email;
-
-            // inserta los datos
-            $newId = $this->sellerModel->insert($nombre, $telefono, $email);
-
-            // si fallo devuelve 500
-            if (!$newId)
-                return $res->json(['Algo fallo' => 'Error en el servidor'], 500);
-
-            // devuelve datos insertados
-            $newSeller = $this->sellerModel->getSellerById($newId);
-            return $res->json($newSeller, 201);
-        else:
-            // si no valido los datos informa el error
-            return $res->json($error, 400);
-        endif;
-    }
-
-    public function update($req, $res)
-    {
-        $error = $this->validarDatos($req);
-
-        if ($error)
-            return $res->json($error, 400);
-
-        // obtiene la id del vendedor
-        $id = $req->params->id;
+        $this->validate_body($req, $res);
 
         // obtiene los datos del body
         $nombre = $req->body->nombre;
         $telefono = $req->body->telefono;
         $email = $req->body->email;
 
+        // inserta los datos
+        $newId = $this->sellerModel->insert($nombre, $telefono, $email);
+        // si falla, devuelve 500
+        if (!$newId)
+            return $res->json(['An unexpected error occurred on the server'], 500);
+
+        // devuelve datos insertados
+        $newSeller = $this->sellerModel->getSellerById($newId);
+        return $res->json($newSeller, 201);
+    }
+
+    public function update($req, $res)
+    {
+        // valida 
+        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
+        $this->validate_body($req, $res);
+        $this->seller_exists($id, $res);
+
+        $nombre = $req->body->nombre;
+        $telefono = $req->body->telefono;
+        $email = $req->body->email;
+
         // actualiza los datos
-        $this->sellerModel->update($id, $nombre, $telefono, $email);
-        $seller = $this->sellerModel->getSellerById($id);
-        return $res->json($seller, 200);
+        $result = $this->sellerModel->update($id, $nombre, $telefono, $email);
+        if (!$result)
+            return $res->json(['An unexpected error occurred on the server'], 500);
+
+        // devuelve datos actualizados
+        return $res->json($this->sellerModel->getSellerById($id));
     }
 
     function delete($req, $res)
     {
-        $id = $req->params->id;
-        $seller = $this->sellerModel->getSellerById($id);
+        // valida
+        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
+        $this->seller_exists($id, $res);
 
-        if (!$seller)
-            return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
-
-        $this->sellerModel->delete($id);
-        return $res->json('Seller deleted', 204);
+        // elimina
+        $delete = $this->sellerModel->delete($id);
+        if (!$delete)
+            return $res->json(['An unexpected error occurred on the server'], 500);
+        return $res->json('', 204);
     }
 
-
+    /* ------------ GETTERS VENDEDORES ------------ */
     public function getAll($req, $res)
     {
-        // toma los query params
-        $sortBy = $req->query->sortBy ?? ''; // si vienen vacios asigno valores default
-        $order = $req->query->order ?? '1';
+        $sort = !empty($req->query->sort) ? $req->query->sort : 'id'; // campos
+        $order = $req->query->order ?? 'ASC'; // direccion
+        $page = $req->query->page ?? null;
+        $_size = $req->query->size ?? 5; // default 5 por pagina
 
-        // todos los posibles ordenamientos x campo de la tabla
-        $sortBy = match ($sortBy) { // match un switch que no lleva breaks/returns
-            'name' => 'nombre',
-            'email' => 'email',
-            'phone' => 'telefono',
-            default => '' // si llega otra cosa queda string vacío
-        };
+        if (!empty($page))
+            $page = $this->validate_int($page, $res, self::INVALID_PAGE);
+        if (!empty($_size) && $_size != 5)
+            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE);
+        
+        if (!empty($req->query->sort)) {
+            $sort = match ($sort) {
+                'name' => 'nombre',
+                'email' => 'email',
+                'phone' => 'telefono',
+                default => 'id' // si llega otra cosa queda ordena por ID
+            };
+        }
+        if (!empty($req->query->order)) {
+            $order = match ($order) {
+                'desc' => 'DESC',
+                'asc' => 'ASC',
+                default => 'ASC' // si llega otra cosa ordena ASC
+            };
+        }
 
-        $order = match ($order) {
-            '0' => 'DESC',
-            '1' => 'ASC',
-            default => 'ASC' // si llega otra cosa ordena ASC
-        };
 
-        $sellers = $this->sellerModel->getSellers($sortBy, $order);
+        $sellers = $this->sellerModel->getSellers($sort, $order, $page, $_size);
         return $res->json($sellers);
     }
 
 
-    public function get($req, $res)
+    public function get($req, $res)// obtiene un vendedor por su ID
     {
-        $id = $req->params->id;
-        if (!$id)
-            return $res->json(["Seller ID no specified", 400]);
-        $seller = $this->sellerModel->getSellerById($id);
-
-        // verifica que exista el vendedor
-        if (!$seller)
-            return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
+        // valida
+        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
+        $seller = $this->seller_exists($id, $res);
 
         return $res->json($seller);
     }
 
-    public function getSales($req, $res)
+    public function getSalesById($req, $res)
     {
-        $id = $req->params->id;
-        $seller = $this->sellerModel->getSellerById($id);
-        // verifica que exista el vendedor
-        if (!$seller)
-            return $res->json(["Seller not found" => "Seller with id=$id doesn't exist in the databse"], 404);
+        $page = $req->query->page ?? null;
+        $_size = $req->query->size ?? 3; // default = 3 ventas x pagina
 
-        $this->saleModel = new SaleModel();
+        // valida
+        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
+        $this->seller_exists($id, $res);
 
-        $sales = $this->saleModel->getSalesBySellerId($id);
+        if (!empty($page))
+            $page = $this->validate_int($page, $res, self::INVALID_PAGE);
+        if (!empty($_size) && $_size != 5)
+            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE);
+
+        $sales = $this->saleModel->getSalesById($id, $page, $_size);
         return $res->json($sales);
-
-
     }
 
-    public function methodNotAllowed($req, $res)
+    /* ------------ VALIDACIONES ------------ */
+    /**
+     * verifica que el valor provisto sea un entero valido
+     * @return int si es es valido, lo devuelve como entero
+     * @throws Error sino, corta ejecucion y envia $res->json($message, 400)
+     */
+    private function validate_int($id, $res, $msg)
     {
-        // devolveria 405 si el method no es valido por ej si manda delete a /vendedores
-        return $res->json(['message' => 'Method not allowed'], 405);
+        $id = filter_var($id, FILTER_VALIDATE_INT);
+        if (!$id)
+            die($res->json($msg, 400));
+        return $id;
+    }
+    /**
+     * verifica que body request contenga todos datos obligatorios y valida formato de email
+     * @return mixed si pasa las validaciones devuelve true
+     * @throws Error sino, corta ejecucion y envia $res->json(404)
+     */
+    private function validate_body($req, $res)
+    {
+        if (empty($req->body->nombre) || empty($req->body->telefono) || empty($req->body->email))
+            die($res->json(['Missing required data' => 'One or more required fields are missing'], 400));
+        elseif (!filter_var($req->body->email, FILTER_VALIDATE_EMAIL))
+            die($res->json(['Syntax error' => 'The provided email is not a valid email'], 400));
+        return true;
+    }
+
+    /**
+     * verifica existencia vendedor segun su id
+     * @return mixed si encuentra al vendedor, lo devuelve. 
+     * @throws Error sino, corta ejecucion y envia $res->json(404)
+     */
+    private function seller_exists($id, $res)
+    {
+        $seller = $this->sellerModel->getSellerById($id);
+        if (!$seller)
+            die($res->json(["Seller not found" => "Seller with ID=$id doesn't exist in the database"], 404));
+        return $seller;
     }
 }

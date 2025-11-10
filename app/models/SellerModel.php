@@ -31,14 +31,19 @@ class SellerModel extends Model
         return count($query->fetchAll()) > 0;
     }
 
-    public function getSellers($sort, $order)
+    public function getSellers($sort = null, $order = null, $page = null, $_size = 3)
     {
         // dejo preparada la consulta sql
-        $sql = "SELECT * FROM `vendedor`"; 
+        $sql = "SELECT * FROM `vendedor`";
 
         // concatena c/la consulta
         if (!empty($sort) || !empty($order))
-            $sql .= "ORDER BY $sort $order";
+            $sql .= " ORDER BY $sort $order";
+
+        if (!empty($page) && $page > 0) {
+            $page = ($page - 1) * $_size;
+            $sql .= " LIMIT $page,$_size";
+        }
 
         $query = $this->db->prepare($sql);
         $query->execute();
