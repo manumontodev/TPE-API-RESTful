@@ -40,6 +40,7 @@ $router->addRoute('ventas/:id',     'GET',      'SaleApiController',    'showSal
 //  vendedores
 $router->addRoute('vendedores',     'GET',   'SellerApiController',    'getAll');
 $router->addRoute('vendedores/:id',     'GET',      'SellerApiController',    'get');
+$router->addRoute('vendedores/:id/ventas',     'GET',      'SellerApiController',    'getSalesById');
 
 
 // metodos ABM 
