@@ -31,27 +31,23 @@ class SellerModel extends Model
         return count($query->fetchAll()) > 0;
     }
 
-    public function getSellers($sort = null, $order = null, $page = null, $_size = 3)
+    public function getSellers($sort = null, $order = null, $page = null, $_size = 3, $filters = [], $params = [])
     {
-        // dejo preparada la consulta sql
         $sql = "SELECT * FROM `vendedor`";
 
-        // concatena c/la consulta
-        if (!empty($sort) || !empty($order))
+        if (!empty($filters)) 
+            $sql .= " WHERE " . implode(" AND ", $filters);
+        if (!empty($sort) && !empty($order)) 
             $sql .= " ORDER BY $sort $order";
 
         if (!empty($page) && $page > 0) {
-            $page = ($page - 1) * $_size;
-            $sql .= " LIMIT $page,$_size";
+            $offset = ($page - 1) * $_size;
+            $sql .= " LIMIT $offset, $_size";
         }
-
         $query = $this->db->prepare($sql);
-        $query->execute();
-
+        $query->execute($params);
         return $query->fetchAll(PDO::FETCH_OBJ);
     }
-
-
 
     public function getSellerById($id)
     {
@@ -90,4 +86,16 @@ class SellerModel extends Model
         $query->execute([$nombre, $telefono, $email, $path]);
         return $this->db->lastInsertId();
     }
+    public function countSellers($filters = [], $params = [])
+    {
+        $sql = "SELECT COUNT(*) FROM vendedor";
+        if (!empty($filters)) 
+            $sql .= " WHERE " . implode(" AND ", $filters);
+
+        $query = $this->db->prepare($sql);
+        $query->execute($params);
+        return (int) $query->fetchColumn();
+    }
+
+
 }

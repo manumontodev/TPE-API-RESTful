@@ -81,19 +81,18 @@ class SaleModel extends Model{
     
 
 
-    public function getSalesById($sellerId, $page, $_size){ // obtiene las ventas de un vendedor, puede paginar
+    public function getSalesById($sellerId, $sort = null, $order = null, $page = null, $_size = 3)
+    { 
         $sql = 'SELECT * FROM `venta` WHERE `id_vendedor` = ?';
-        if (!empty($page && $page > 0)) {
-            $page = ($page - 1) * $_size;
-            $sql .= " LIMIT $page,$_size";
+        if (!empty($sort) && !empty($order)) 
+            $sql .= " ORDER BY $sort $order";
+        if (!empty($page) && $page > 0) {
+            $offset = ($page - 1) * $_size;
+            $sql .= " LIMIT $offset, $_size";
         }
-
         $query = $this->db->prepare($sql);
         $query->execute([(int)$sellerId]);
-
-        $sales = $query->fetchAll(PDO::FETCH_OBJ);
-
-        return $sales; // no hacia return
+        return $query->fetchAll(PDO::FETCH_OBJ);
     }
     
     public function getSaleById($idVenta) { // obtiene una venta por su ID
