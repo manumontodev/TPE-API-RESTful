@@ -41,7 +41,7 @@ public function getAllSales($req, $res)
         $params = [];
 
         if (isset($_GET['min_price'])) {
-            $minPrice = filter_var($_GET['min_price'], FILTER_VALIDATE_FLOAT);
+            $minPrice = filter_var($_GET['min_price'], FILTER_VALIDATE_FLOAT);//valida que el valor sea un número decimal
             if ($minPrice !== false) {
                 $filters[] = "precio >= :min_price";
                 $params[':min_price'] = $minPrice;
@@ -49,7 +49,7 @@ public function getAllSales($req, $res)
         }
 
         if (isset($_GET['max_price'])) {
-            $maxPrice = filter_var($_GET['max_price'], FILTER_VALIDATE_FLOAT);
+            $maxPrice = filter_var($_GET['max_price'], FILTER_VALIDATE_FLOAT);//valida que el valor sea un número decimal
             if ($maxPrice !== false) {
                 $filters[] = "precio <= :max_price";
                 $params[':max_price'] = $maxPrice;
@@ -57,7 +57,7 @@ public function getAllSales($req, $res)
         }
 
         if (isset($_GET['id_vendedor'])) {
-            $idVendedor = filter_var($_GET['id_vendedor'], FILTER_VALIDATE_INT);
+            $idVendedor = filter_var($_GET['id_vendedor'], FILTER_VALIDATE_INT); //valida que el valor sea un número entero
             if ($idVendedor === false) {
                 return $res->json('ID de vendedor inválido. Debe ser un número entero.', 400);
             }

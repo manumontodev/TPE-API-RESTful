@@ -61,6 +61,33 @@ Para acceder al sitio solo es necesario tener corriendo [Apache](https://www.apa
 
 ---
 
+### Ejemplo de respuesta a /ventas/:id y /vendedores/:id
+Respuesta en formato JSON
+-Venta:
+{
+  "id_venta": 1,
+  "producto": "Monitor Smart HD Samsung",
+  "precio": 10900.00,
+  "id_vendedor": 1,
+  "fecha": "2025-10-01",
+},
+
+-Vendedor:
+{
+  "id": 1,
+  "nombre": "Lucia",
+  "telefono": 2494001,
+  "email": lucia@tienda.com,
+},
+
+
+### Filtros y Ordenamiento 
+ La API permite a los usuarios obtener una lista de ventas y vendedores con distintos filtros y un orden personalizado. El ordenamiento se realiza sobre todos los campos, permitiendo al usuario especificar si desea ordenar en orden ascendente (asc) o descendente (desc).
+
+ 
+
+
+
 ### Más información
 - [Ciencias Exactas](https://exa.unicen.edu.ar/) — Facultad de Ciencias Exactas, UNICEN.  
 - [TUDAI](https://www.unicen.edu.ar/content/tecnicatura-universitaria-en-desarrollo-de-aplicaciones-inform%C3%A1ticas-tudai) — Tecnicatura Universitaria en Desarrollo de Aplicaciones Informáticas.  
