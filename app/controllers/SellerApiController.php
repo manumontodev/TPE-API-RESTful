@@ -6,8 +6,11 @@ class sellerApiController
 {
     private $sellerModel;
     private $saleModel;
-    private const INVALID_ID = ['Syntax error' => 'Provided ID is not a valid ID'];
-    private const INVALID_PAGE = ['Syntax error' => 'Invalid page number'];
+    private const INVALID_ID = ['Syntax Error' => 'Provided ID is not a valid ID'];
+    private const INVALID_PAGE = [
+        'Syntax Error' => 'Syntax Error: Required page is not a valid number',
+        'Out of Range' => "Out of Range: Required page is out of range."
+    ];
 
     function __construct()
     {
@@ -77,11 +80,13 @@ class sellerApiController
         $page = $req->query->page ?? null;
         $_size = $req->query->size ?? 5; // default 5 por pagina
 
+        // paginacion
         if (!empty($page))
-            $page = $this->validate_int($page, $res, self::INVALID_PAGE);
+            $page = $this->validate_int($page, $res, self::INVALID_PAGE['Syntax Error']);
         if (!empty($_size) && $_size != 5)
-            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE);
-        
+            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE['Syntax Error']);
+
+        // ordenamiento
         if (!empty($req->query->sort)) {
             $sort = match ($sort) {
                 'name' => 'nombre',
@@ -98,9 +103,44 @@ class sellerApiController
             };
         }
 
+        // filtros
+        $filters = [];
+        $params = [];
 
-        $sellers = $this->sellerModel->getSellers($sort, $order, $page, $_size);
-        return $res->json($sellers);
+        if (!empty($req->query->name)) {
+            $filters[] = "nombre LIKE :name";
+            $params[':name'] = '%' . $req->query->name . '%';
+        }
+
+        if (!empty($req->query->email)) {
+            $filters[] = "email LIKE :email";
+            $params[':email'] = '%' . $req->query->email . '%';
+        }
+
+        if (!empty($req->query->phone)) {
+            $filters[] = "telefono LIKE :phone";
+            $params[':phone'] = '%' . $req->query->phone . '%';
+        }
+
+        $sellers = $this->sellerModel->getSellers($sort, $order, $page, $_size, $filters, $params);
+
+        if (empty($page)):
+            return $res->json($sellers);
+        else:
+            $total = $this->sellerModel->countSellers($filters, $params);
+            $max_pages = ceil($total / $_size);
+            // envia metadata de la paginacion en la response
+            $response = [
+                'sellers' => $sellers,
+                'page' => $this->validate_page_range($page, $max_pages, $res, self::INVALID_PAGE['Out of Range']),
+                'size' => $_size,
+                'total_sellers' => $total,
+                'max_pages' => $max_pages
+            ];
+
+            return $res->json($response);
+
+        endif;
     }
 
 
@@ -115,6 +155,8 @@ class sellerApiController
 
     public function getSalesById($req, $res)
     {
+        $sort = !empty($req->query->sort) ? $req->query->sort : 'id_venta'; // campos
+        $order = $req->query->order ?? 'ASC'; // direccion
         $page = $req->query->page ?? null;
         $_size = $req->query->size ?? 3; // default = 3 ventas x pagina
 
@@ -122,13 +164,51 @@ class sellerApiController
         $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
         $this->seller_exists($id, $res);
 
+        // paginacion
         if (!empty($page))
-            $page = $this->validate_int($page, $res, self::INVALID_PAGE);
+            $page = $this->validate_int($page, $res, self::INVALID_PAGE['Syntax Error']);
         if (!empty($_size) && $_size != 5)
-            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE);
+            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE['Syntax Error']);
 
-        $sales = $this->saleModel->getSalesById($id, $page, $_size);
-        return $res->json($sales);
+        // ordenamiento
+        if (!empty($req->query->sort)) {
+            $sort = match ($sort) {
+                'price' => 'precio',
+                'product' => 'producto',
+                'date' => 'fecha',
+                default => 'id_venta' // si llega otra cosa queda ordena por ID
+            };
+        }
+        if (!empty($req->query->order)) {
+            $order = match ($order) {
+                'desc' => 'DESC',
+                'asc' => 'ASC',
+                default => 'ASC' // si llega otra cosa ordena ASC
+            };
+        }
+
+        $sales = $this->saleModel->getSalesById($id, $sort, $order, $page, $_size);
+
+        if (empty($page)):
+            return $res->json($sales);
+        else:
+            $total = $this->saleModel->countSales(['id_vendedor = ' . $id]); // cuenta solo las q corresponden al vendedor
+            if ($_size > $total)
+                $_size = $total;
+            $max_pages = ceil($total / $_size);
+            // envia metadata de la paginacion en la response
+            $response = [
+                'ventas' => $sales,
+                'page' => $this->validate_page_range($page, $max_pages, $res, self::INVALID_PAGE['Out of Range']),
+                'size' => $_size,
+                'total_sales' => $total,
+                'max_pages' => $max_pages
+            ];
+
+
+            return $res->json($response);
+
+        endif;
     }
 
     /* ------------ VALIDACIONES ------------ */
@@ -156,6 +236,13 @@ class sellerApiController
         elseif (!filter_var($req->body->email, FILTER_VALIDATE_EMAIL))
             die($res->json(['Syntax error' => 'The provided email is not a valid email'], 400));
         return true;
+    }
+
+    private function validate_page_range($num, $range, $res, $msg)
+    {
+        if ($num > $range)
+            die($res->json($msg . ' Total pages = ' . $range, 400)); // agrego informacion extra al msg de error
+        return $num;
     }
 
     /**
