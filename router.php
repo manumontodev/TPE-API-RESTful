@@ -1,11 +1,11 @@
 <?php
-require_once './libs/router/router.php';
-require_once './app/controllers/SellerApiController.php';
-require_once './app/controllers/SaleApiController.php';
-require_once './app/controllers/AuthApiController.php';
-require_once './app/controllers/ErrorApiController.php';
-require_once './libs/jwt/jwt.middleware.php';
-require_once './app/middlewares/GuardApiMiddleware.php';
+require_once 'libs/router/router.php';
+require_once 'app/controllers/SellerApiController.php';
+require_once 'app/controllers/SaleApiController.php';
+require_once 'app/controllers/AuthApiController.php';
+require_once 'app/controllers/ErrorApiController.php';
+require_once 'libs/jwt/jwt.middleware.php';
+require_once 'app/middlewares/GuardApiMiddleware.php';
 
 // Permitir solicitudes desde cualquier origen (solo para probar frontend)
 header("Access-Control-Allow-Origin: *");

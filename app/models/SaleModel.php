@@ -50,7 +50,7 @@ class SaleModel extends Model{
 
       // Vincula parámetros
       foreach ($params as $key => $value) {
-          $query->bindValue($key, $value); //En PHP, bindValue es un método que se utiliza en consultas preparadas para asociar un valor específico a un parámetro de la consulta SQL antes de ejecutarla
+          $query->bindValue($key, $value); //bindValue se utiliza en consultas preparadas para asociar un valor específico a un parámetro de la consulta SQL antes de ejecutarla
       }
 
       // Vincula límite y offset
@@ -59,7 +59,6 @@ class SaleModel extends Model{
 
       $query->execute();
 
-      // Retorna resultados como objetos
       return $query->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -95,7 +94,7 @@ class SaleModel extends Model{
         return $query->fetchAll(PDO::FETCH_OBJ);
     }
     
-    public function getSaleById($idVenta) { // obtiene una venta por su ID
+    public function getSaleById($idVenta) { 
         $query = $this->db->prepare('
             SELECT v.*, s.nombre AS nombre
             FROM venta v
