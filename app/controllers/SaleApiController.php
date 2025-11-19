@@ -177,7 +177,7 @@ public function getAllSales($req, $res)
     //api/venta/:id (PUT)
     public function updateSale($req, $res)
 {
-    $id = $req->params->id_venta;
+    $id = $req->params->id;
 
     // Valido ID
     if (!is_numeric($id) || $id <= 0) {
@@ -218,7 +218,7 @@ public function getAllSales($req, $res)
     //api/venta/delete(:id)
     public function deleteSale($req, $res)
 {
-    $id = $req->params->id_venta;
+    $id = $req->params->id;
 
     // Validar ID
     if (!is_numeric($id) || $id <= 0) {
