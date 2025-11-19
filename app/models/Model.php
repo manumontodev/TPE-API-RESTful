@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 
+
 abstract class Model
 {
     // variable de conexion al sv para las clases hijas
     private static $pdo;
 
+    
     // variable usada por las clases hijas
     protected $db;
 
@@ -34,7 +36,7 @@ abstract class Model
 
 
 
-            } catch (\PDOException $e) {
+            } catch (PDOException $e) {
                 throw new Exception ("Error en la conexión o creación de DB: " . $e->getMessage());
             }
         }

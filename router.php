@@ -1,4 +1,10 @@
 <?php
+//para chequear errores
+// error_reporting(E_ALL);
+//ini_set('display_errors', 1);               // No mostrar en pantalla (para producción)
+//ini_set('log_errors', 1);
+//ini_set('error_log', __DIR__ . '/php-error.log');
+
 require_once 'libs/router/router.php';
 require_once 'app/controllers/SellerApiController.php';
 require_once 'app/controllers/SaleApiController.php';

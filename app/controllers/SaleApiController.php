@@ -1,12 +1,14 @@
 <?php
 require_once 'app/models/SaleModel.php';
-require_once 'app/models/SellerModel.php'; 
+require_once 'app/models/SellerModel.php';
+
 
 class SaleApiController {
     private $model;
     private $modelSeller;
 
-    function __construct() {
+    public function __construct() {
+        
         $this->modelSeller = new SellerModel(); 
         $this->model = new SaleModel();
     }
@@ -18,7 +20,7 @@ public function getAllSales($req, $res)
     try {
         // Ordenamiento
         $allowedSortFields = ['id_venta', 'producto', 'precio', 'id_vendedor', 'fecha'];
-
+// parsear texto enviado por usuario a minusuclua
         $sortField = $req->query->sortField ?? 'id_venta';
         $sortOrder = ($req->query->sortOrder ?? 'asc') === 'desc' ? 'desc' : 'asc';
 
@@ -28,6 +30,7 @@ public function getAllSales($req, $res)
         }
 
         // Paginación
+        // isnumeric
         $page = isset($req->query->page) ? (int) $req->query->page : 1;
         $limit = isset($req->query->limit) ? (int) $req->query->limit : 5;
 

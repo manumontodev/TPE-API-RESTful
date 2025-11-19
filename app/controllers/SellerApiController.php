@@ -1,5 +1,5 @@
 <?php
-require_once 'app/models/sellerModel.php'; //aca esta seller en minuscula, te funciona?
+require_once 'app/models/SellerModel.php'; //aca esta seller en minuscula, te funciona?
 require_once 'app/models/SaleModel.php';
 
 class sellerApiController
