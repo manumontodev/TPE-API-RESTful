@@ -1,96 +1,126 @@
-# TPE Parte 3: API RESTful  - Tienda Computación
-### [WEB 2 - TUDAI, UNICEN](#más-información)
+# 💻 TPE Parte 3: API RESTful - Tienda Computación
 
-Este es el repositorio de nuestra API de la [Tienda Computación](https://github.com/lumoreiralu/TPEspecial-web2-2025), la cual proporciona acceso a los datos de todos los vendedores almacenados en su base de datos, así como a todas sus ventas.
+[![Status](https://img.shields.io/badge/Status-Completado-green.svg)](https://github.com/lumoreiralu/TPEspecial-web2-2025)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Miembros del equipo
->- **[Lucia Moreira](https://github.com/luciamoreira96)** — `lulii.moreira96@gmail.com`  
->- **[Manuel Montoya](https://github.com/manumontodev)** — `montoya.christensen@outlook.com`
+Este es el repositorio de la **API RESTful** de la [Tienda Computación](https://github.com/lumoreiralu/TPEspecial-web2-2025). La API permite gestionar las entidades de **Vendedores** y **Ventas**, proporcionando un conjunto de servicios de Alta, Baja, Modificación (ABM) y consulta a través de HTTP.
 
----
+## 🧑‍💻 Miembros del Equipo
 
-## Tabla de ruteo
-
-La siguiente lista contiene todos los **endpoints** junto con sus **verbos HTTP** para realizar las operaciones de *Alta, Baja y Modificación*, además de listar las categorías y entidades:
-
-### Tabla de ventas
-- **GET** `/ventas` → obtiene la lista de todas las ventas.  
-- **GET** `/ventas/:id` → obtiene el detalle de una venta por su ID.  
-- **POST** `/ventas` → crea una nueva venta (incluir en el body todos los datos requeridos, [ver diagrama](#der)).  
-- **PUT** `/ventas/:id` → modifica una venta existente por su ID.  
-- **DELETE** `/ventas/:id` → elimina una venta por su ID.  
-
-### Tabla de vendedores
-- **GET** `/vendedores` → obtiene la lista de todos los vendedores.  
-- **GET** `/vendedores/:id` → obtiene la información de un vendedor por su ID.  
-- **GET** `/vendedores/:id/ventas` → obtiene todas las ventas de un vendedor específico.  
-- **POST** `/vendedores` → da de alta un nuevo vendedor (incluir en el body los datos requeridos, [ver diagrama](#der)).  
-- **PUT** `/vendedores/:id` → modifica los datos de un vendedor.  
-- **DELETE** `/vendedores/:id` → elimina un vendedor por su ID.  
-
-### Autenticación
-- **GET** `/auth/login` → genera un token JWT, que debe incluirse en el encabezado de las solicitudes HTTP para acceder a los servicios de ABM.
+| Nombre | GitHub | Email |
+| :--- | :--- | :--- |
+| **Lucia Moreira** | [@luciamoreira96](https://github.com/luciamoreira96) | `lulii.moreira96@gmail.com` |
+| **Manuel Montoya** | [@manumontodev](https://github.com/manumontodev) | `montoya.christensen@outlook.com` |
 
 ---
 
-## Instalación automática de la base de datos
+## 🗺️ Endpoints de la API (Tabla de Ruteo)
 
-Este sitio está configurado para realizar un auto-deploy de la base de datos.  
-Para acceder al sitio solo es necesario tener corriendo [Apache](https://www.apachefriends.org/) y [phpMyAdmin](http://localhost/phpmyadmin/), y clonar este repositorio en la carpeta `htdocs`.
+La API opera sobre dos recursos principales: `ventas` y `vendedores`. El acceso a los servicios de ABM requiere **Autenticación**.
 
-## Instalación manual de la base de datos
+### Recurso: `/ventas`
 
-1. Abrir [phpMyAdmin](http://localhost/phpmyadmin/) en el navegador.  
-2. Crear una nueva base de datos llamada `db_tiendaComputacion`.  
-3. Seleccionar la base de datos.  
-4. Hacer clic en la pestaña **Importar**.  
-5. Seleccionar el archivo `db/db_tiendaComputacion.sql` de este proyecto.  
-6. Hacer clic en **Continuar** para importar las tablas y datos.
+| Verbo HTTP | Endpoint | Descripción | Requiere Auth |
+| :--- | :--- | :--- | :--- |
+| **`GET`** | `/ventas` | Obtiene la lista de todas las ventas. | No |
+| **`GET`** | `/ventas/:id` | Obtiene el detalle de una venta por su ID. | No |
+| **`POST`** | `/ventas` | Crea una nueva venta. | **Sí** |
+| **`PUT`** | `/ventas/:id` | Modifica una venta existente por su ID. | **Sí** |
+| **`DELETE`** | `/ventas/:id` | Elimina una venta por su ID. | **Sí** |
+
+### Recurso: `/vendedores`
+
+| Verbo HTTP | Endpoint | Descripción | Requiere Auth |
+| :--- | :--- | :--- | :--- |
+| **`GET`** | `/vendedores` | Obtiene la lista de todos los vendedores. | No |
+| **`GET`** | `/vendedores/:id` | Obtiene la información de un vendedor por su ID. | No |
+| **`GET`** | `/vendedores/:id/ventas` | Obtiene todas las ventas asociadas a un vendedor específico. | No |
+| **`POST`** | `/vendedores` | Crea un nuevo vendedor (Alta). | **Sí** |
+| **`PUT`** | `/vendedores/:id` | Modifica los datos de un vendedor existente. | **Sí** |
+| **`DELETE`** | `/vendedores/:id` | Elimina un vendedor por su ID. | **Sí** |
+
+### 🔑 Autenticación (JWT)
+
+| Verbo HTTP | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| **`GET`** | `/auth/login` | Genera un **Token JWT** necesario para incluir en el encabezado de las solicitudes (headers) que acceden a los servicios de ABM (`POST`, `PUT`, `DELETE`). |
 
 ---
 
-## DER
+## 🔎 Consultas Avanzadas (Filtros y Ordenamiento)
+
+La API permite obtener listas de ventas y vendedores aplicando filtros, paginación y ordenamiento sobre diversos campos.
+
+| Operación | Ejemplo de URL | Descripción |
+| :--- | :--- | :--- |
+| **Paginación & Ordenamiento** | `/ventas?page=2&sortField=precio&sortOrder=desc` | Obtiene la página 2 de ventas, ordenadas por `precio` de forma descendente. |
+| **Ordenamiento Simple** | `/ventas?sortField=precio` | Ordena las ventas por `precio` (ascendente por defecto). |
+| **Filtrado por Rango** | `/ventas?min_price=4000&max_price=5000` | Filtra ventas dentro de un rango de precios. |
+| **Filtrado por Campo** | `/vendedores?name=Lucia` | Filtra vendedores cuyo nombre es "Lucia". |
+| **Filtrado Relacional** | `/ventas?id_vendedor=1` | Filtra todas las ventas realizadas por el vendedor con `id_vendedor=1`. |
+
+---
+
+## 🛠️ Estructura de Datos (JSON Body)
+
+A continuación, se detalla la estructura JSON esperada para las solicitudes (`POST` y `PUT`) y las respuestas (`GET`).
+
+### Formato de Respuesta (`GET /:id`)
+
+| Recurso | Ejemplo de Respuesta JSON |
+| :--- | :--- |
+| **Venta** | ```json { "id_venta": 1, "producto": "Monitor Smart HD Samsung", "precio": 10900.00, "id_vendedor": 1, "fecha": "2025-10-01" } ``` |
+| **Vendedor** | ```json { "id": 1, "nombre": "Lucia", "telefono": 2494001, "email": "lucia@tienda.com" } ``` |
+
+### Formato de Solicitud (`POST` y `PUT`)
+
+| Recurso | Solicitud JSON (Body) |
+| :--- | :--- |
+| **Venta** (`POST/PUT`) | ```json { "producto": "______", "precio": ___, "id_vendedor": _, "fecha": "________" } ``` |
+| **Vendedor** (`POST/PUT`) | ```json { "nombre": "______", "telefono": ______, "email": "______" } ``` |
+
+> **Nota sobre `PUT`:** Para modificar un recurso (`PUT /:id`), el cuerpo de la solicitud debe incluir **todos los campos** de la entidad, no solo los que se van a modificar.
+
+---
+
+## ⚙️ Instalación y Configuración
+
+Este proyecto requiere un entorno de servidor web (XAMPP) para su ejecución.
+
+### 1. Instalación Automática 
+
+El sitio está configurado para realizar un **auto-deploy** de la base de datos al acceder.
+1. Asegúrate de tener **Apache** y **phpMyAdmin** corriendo (por ejemplo, usando [XAMPP](https://www.apachefriends.org/)).
+2. Clona este repositorio dentro de la carpeta `htdocs` de tu servidor Apache.
+3. Accede al proyecto a través de tu navegador local.
+
+### 2. Instalación Manual de la Base de Datos
+
+Si la instalación automática falla o prefieres hacerlo manualmente:
+1. Abre [phpMyAdmin](http://localhost/phpmyadmin/) en tu navegador.
+2. Crea una nueva base de datos llamada `db_tiendaComputacion`.
+3. Selecciona la base de datos recién creada.
+4. Haz clic en la pestaña **Importar**.
+5. Selecciona el archivo `db/db_tiendaComputacion.sql` que se encuentra en este proyecto.
+6. Haz clic en **Continuar** para importar las tablas y datos de ejemplo.
+
+---
+
+## 📊 Diagrama Entidad-Relación (DER)
+
+Este diagrama ilustra la estructura de la base de datos subyacente que utiliza la API.
 
 <p align="center">
-  <img width="640" height="330" alt="Diagrama Entidad-Relación" src="./DER tienda.jpg" /><br>
+  <img alt="Diagrama Entidad-Relación" src="./DER tienda.jpg" />
 </p>
 
 ---
 
-~~Este proyecto continúa la idea del [TPE - Parte 2: Sitio Web Dinámico](https://github.com/lumoreiralu/TPEspecial-web2-2025), agregando una API REST pública que permite consumir los servicios de ABM de vendedores y ventas.~~
+## 📚 Más Información
 
----
+Este proyecto fue desarrollado en el marco de la materia **Web 2** de la carrera **TUDAI** en la UNICEN.
 
-### Ejemplo de respuesta a /ventas/:id y /vendedores/:id
-Respuesta en formato JSON
--Venta:
-{
-  "id_venta": 1,
-  "producto": "Monitor Smart HD Samsung",
-  "precio": 10900.00,
-  "id_vendedor": 1,
-  "fecha": "2025-10-01",
-},
-
--Vendedor:
-{
-  "id": 1,
-  "nombre": "Lucia",
-  "telefono": 2494001,
-  "email": lucia@tienda.com,
-},
-
-
-### Filtros y Ordenamiento 
- La API permite a los usuarios obtener una lista de ventas y vendedores con distintos filtros y un orden personalizado. El ordenamiento se realiza sobre todos los campos, permitiendo al usuario especificar si desea ordenar en orden ascendente (asc) o descendente (desc).
-
- 
-
-
-
-### Más información
-- [Ciencias Exactas](https://exa.unicen.edu.ar/) — Facultad de Ciencias Exactas, UNICEN.  
-- [TUDAI](https://www.unicen.edu.ar/content/tecnicatura-universitaria-en-desarrollo-de-aplicaciones-inform%C3%A1ticas-tudai) — Tecnicatura Universitaria en Desarrollo de Aplicaciones Informáticas.  
-- [WEB 2](https://tudai1-2.alumnos.exa.unicen.edu.ar/web-2) — Sitio de la cátedra.  
-
-También te puede interesar: [UNICEN](https://www.unicen.edu.ar/)
+* [Ciencias Exactas](https://exa.unicen.edu.ar/) — Facultad de Ciencias Exactas, UNICEN.
+* [TUDAI](https://www.unicen.edu.ar/content/tecnicatura-universitaria-en-desarrollo-de-aplicaciones-inform%C3%A1ticas-tudai) — Tecnicatura Universitaria en Desarrollo de Aplicaciones Informáticas.
+* [WEB 2](https://tudai1-2.alumnos.exa.unicen.edu.ar/web-2) — Sitio de la cátedra.
+* [Repositorio Parte 2](https://github.com/lumoreiralu/TPEspecial-web2-2025) — TPE - Parte 2: Sitio Web Dinámico.
