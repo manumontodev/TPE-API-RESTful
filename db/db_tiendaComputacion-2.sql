@@ -66,13 +66,13 @@ INSERT INTO `vendedor` (`id`, `nombre`, `telefono`, `email`, `imagen`) VALUES
 (1, 'Lucia M', 2494001, 'lucia@tienda.com', 'img/default-user-img.jpg'),
 (2, 'Manuel', 2494002, 'manuel@tienda.com', 'img/68f2920fb3b78.png'),
 (3, 'Carlos', 2494003, 'carlos@tienda.com', 'img/default-user-img.jpg'),
-(4, 'Pepito', 2494004, 'pepito@tienda.com', 'img/default-user-img.jpg');
-(5, 'Juanita', 2494005, 'juanita@tienda.com', 'img/default-user-img.jpg');
-(6, 'Ximena', 2214001, 'ximena@tienda.com', 'img/default-user-img.jpg');
-(7, 'Panchito', 2214002, 'panchito@tienda.com', 'img/default-user-img.jpg');
-(8, 'Zoe', 2214003, 'zoe@tienda.com', 'img/default-user-img.jpg');
-(9, 'Roberto', 2214004, 'rober@tienda.com', 'img/default-user-img.jpg');
-(10, 'Fernanda', 2214005, 'fernanda@tienda.com', 'img/default-user-img.jpg');
+(4, 'Pepito', 2494004, 'pepito@tienda.com', 'img/default-user-img.jpg'),
+(5, 'Juanita', 2494005, 'juanita@tienda.com', 'img/default-user-img.jpg'),
+(6, 'Ximena', 2214001, 'ximena@tienda.com', 'img/default-user-img.jpg'),
+(7, 'Panchito', 2214002, 'panchito@tienda.com', 'img/default-user-img.jpg'),
+(8, 'Zoe', 2214003, 'zoe@tienda.com', 'img/default-user-img.jpg'),
+(9, 'Roberto', 2214004, 'rober@tienda.com', 'img/default-user-img.jpg'),
+(10, 'Fernanda', 2214005, 'fernanda@tienda.com', 'img/default-user-img.jpg'),
 (11, 'ultimo', 123456, 'vendedor@tienda.com', 'img/default-user-img.jpg');
 
 
