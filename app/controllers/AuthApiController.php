@@ -44,7 +44,7 @@ class AuthApiController
         $payload = [
             'sub' => $user->id_usuario,
             'usuario' => $user->user,
-            'roles' => ['ADMIN'],
+            'roles' => ["$user->rol"],
             'exp' => time() + 3600 // 1 hora
         ];
 
