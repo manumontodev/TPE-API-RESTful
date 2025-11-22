@@ -33,7 +33,7 @@ class SellerModel extends Model
         return count($query->fetchAll()) > 0;
     }
 
-    public function getSellers($sort = null, $order = null, $page = null, $_size = 3, $filters = [], $params = [])
+    public function getSellers($sort = null, $order = null, $page = null, $_size = null, $filters = [], $params = [])
     {
         $sql = "SELECT * FROM `vendedor`";
 
@@ -42,7 +42,7 @@ class SellerModel extends Model
         if (!empty($sort) && !empty($order)) 
             $sql .= " ORDER BY $sort $order";
 
-        if (!empty($page) && $page > 0) {
+        if (!empty($_size) && !empty($page) && $page > 0) {
             $offset = ($page - 1) * $_size;
             $sql .= " LIMIT $offset, $_size";
         }

@@ -53,11 +53,11 @@ La API permite obtener listas de ventas y vendedores aplicando filtros, paginaci
 
 | Operación | Ejemplo de URL | Descripción |
 | :--- | :--- | :--- |
-| **Paginación & Ordenamiento** | `/ventas?page=2&sortField=precio&sortOrder=desc` | Obtiene la página 2 de ventas, ordenadas por `precio` de forma descendente. |
-| **Ordenamiento Simple** | `/ventas?sortField=precio` | Ordena las ventas por `precio` (ascendente por defecto). |
+| **Paginación & Ordenamiento** | `/ventas?page=2&sort=price&order=desc` | Obtiene la página 2 de ventas, ordenadas por `precio` de forma descendente. |
+| **Ordenamiento Simple** | `/ventas?sort=price` | Ordena las ventas por `precio` (ascendente por defecto). |
 | **Filtrado por Rango** | `/ventas?min_price=4000&max_price=5000` | Filtra ventas dentro de un rango de precios. |
 | **Filtrado por Campo** | `/vendedores?name=Lucia` | Filtra vendedores cuyo nombre es "Lucia". |
-| **Filtrado Relacional** | `/ventas?id_vendedor=1` | Filtra todas las ventas realizadas por el vendedor con `id_vendedor=1`. |
+| **Filtrado Relacional** | `/ventas?seller_id=1` | Filtra todas las ventas realizadas por el vendedor con `id_vendedor=1`. |
 
 ---
 

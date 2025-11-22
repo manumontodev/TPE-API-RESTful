@@ -21,18 +21,29 @@ class SaleApiController
     {
         try {
             // opciones para ordenamiento
-            $allowedSortFields = ['id_venta', 'producto', 'precio', 'id_vendedor', 'fecha'];
+            $allowedsorts = ['sale_id', 'item', 'price', 'seller_id', 'date'];
 
-            $sortField = strtolower($req->query->sortField ?? 'id_venta');
-            $sortOrder = strtolower($req->query->sortOrder ?? 'asc');
+            $sort = strtolower($req->query->sort ?? 'sale_id');
+            $order = strtolower($req->query->order ?? 'asc');
 
             // validar orden asc/desc
-            $sortOrder = $sortOrder === 'desc' ? 'desc' : 'asc';
+            $order = $order === 'desc' ? 'desc' : 'asc';
 
             // validar campo permitido
-            if (!in_array($sortField, $allowedSortFields)) {
-                return $res->json("Campo de ordenamiento no permitido: $sortField", 400);
+            if (!in_array($sort, $allowedsorts)) {
+                return $res->json("Campo de ordenamiento no permitido: $sort", 400);
             }
+
+            $sortMap = [
+                'sale_id' => 'id_venta',
+                'item' => 'producto',
+                'price' => 'precio',
+                'seller_id' => 'id_vendedor',
+                'date' => 'fecha',
+            ];
+
+            $sort = $sortMap[$sort] ?? 'id_venta';
+
 
             // Validar page
             $page = filter_var($req->query->page ?? null, FILTER_VALIDATE_INT, [
@@ -43,17 +54,17 @@ class SaleApiController
             $page = $page !== false ? $page : 1;
 
 
-            // Validar limit
-            $limit = filter_var($req->query->limit ?? null, FILTER_VALIDATE_INT, [
+            // Validar size
+            $size = filter_var($req->query->size ?? null, FILTER_VALIDATE_INT, [
                 'options' => ['min_range' => 1]
             ]);
 
             // Si no es válido, valor por defecto = 5
-            $limit = $limit !== false ? $limit : 5;
+            $size = $size !== false ? $size : 5;
 
 
             // Calcular offset
-            $offset = ($page - 1) * $limit;
+            $offset = ($page - 1) * $size;
 
             // Filtros opcionales
             $filters = [];
@@ -75,17 +86,17 @@ class SaleApiController
                 }
             }
 
-            if (isset($req->query->id_vendedor)) {
-                $idVendedor = filter_var($req->query->id_vendedor, FILTER_VALIDATE_INT);
+            if (isset($req->query->seller_id)) {
+                $idVendedor = filter_var($req->query->seller_id, FILTER_VALIDATE_INT);
                 if ($idVendedor === false) {
                     return $res->json('ID de vendedor inválido. Debe ser un número entero.', 400);
                 }
-                $filters[] = "id_vendedor = :id_vendedor";
-                $params[':id_vendedor'] = $idVendedor;
+                $filters[] = "id_vendedor = :seller_id";
+                $params[':seller_id'] = $idVendedor;
             }
 
             // Consulta al modelo
-            $sales = $this->model->getAll($sortField, $sortOrder, $filters, $limit, $offset, $params);
+            $sales = $this->model->getAll($sort, $order, $filters, $size, $offset, $params);
             $totalSales = $this->model->countSales($filters, $params);
 
             // Agregar información del vendedor
@@ -98,11 +109,11 @@ class SaleApiController
             $response = [
                 'ventas' => $sales,
                 'pagina' => $page,
-                'limite' => $limit,
+                'size' => $size,
                 'total_ventas' => $totalSales,
-                'total_paginas' => ceil($totalSales / $limit),
-                'ordenado_por' => $sortField,
-                'orden' => strtoupper($sortOrder)
+                'total_paginas' => ceil($totalSales / $size),
+                'ordenado_por' => $sort,
+                'orden' => strtoupper($order)
             ];
 
             return $res->json($response, 200);
@@ -229,7 +240,8 @@ class SaleApiController
 
 
     // api/ventas/:id (DELETE)
-    public function deleteSale($req, $res){
+    public function deleteSale($req, $res)
+    {
         $id = $req->params->id;
 
         if (!is_numeric($id) || $id <= 0) {
