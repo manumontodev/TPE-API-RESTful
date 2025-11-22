@@ -11,7 +11,7 @@ class SellerApiController
             'Error' => 'Provided ID is not valid'
         ],
         'Invalid Page' => [
-            'Error' => 'Page or page size is not a valid number'
+            'Error' => 'Page or page size not a positive integer'
         ]
     ];
 
@@ -87,13 +87,10 @@ class SellerApiController
 
         // paginacion
         $page = $req->query->page ?? null;
-        $size = $req->query->size ?? null;
+        $size = $req->query->size ?? 5;
         $total = $this->sellerModel->countSellers($filters, $params);
 
-        if (empty($size))
-            $size = !empty($page) ? 5 : $total;
-        else
-            $size = $this->validate_int($size, $res, self::ERRORS['Invalid Page']);
+        $size = $this->validate_int($size, $res, self::ERRORS['Invalid Page']);
 
         $max_pages = $total === 0 ? 1 : ceil($total / $size);
         $page = filter_var($page, FILTER_VALIDATE_INT, [
@@ -129,11 +126,11 @@ class SellerApiController
             'sellers' => $sellers,
             'metadata' => [
                 'current_page' => $page ?? 1,
+                'max_pages' => $max_pages,
                 'current_size' => $size,
                 'total_sellers' => $total,
-                'max_pages' => $max_pages,
-                'ordenado_por' => $sort,
-                'orden' => $order
+                'orderBy' => $sort,
+                'order' => $order
             ]
         ];
 
@@ -159,12 +156,9 @@ class SellerApiController
         // paginacion
         $total = $this->saleModel->countSales(['id_vendedor = ' . $id]); // cuenta solo las q corresponden al vendedor
         $page = $req->query->page ?? null;
-        $size = $req->query->size ?? null;
+        $size = $req->query->size ?? 5;
+        $size = $this->validate_int($size, $res, self::ERRORS['Invalid Page']);
 
-        if (empty($size))
-            $size = !empty($page) ? 5 : $total;
-        else
-            $size = $this->validate_int($size, $res, self::ERRORS['Invalid Page']);
         $max_pages = $total === 0 ? 1 : ceil($total / $size);
 
         if (!empty($page)) {
@@ -173,10 +167,10 @@ class SellerApiController
             $page = 1;
 
         // ordenamiento
-        $allowedSorts = ['price', 'item', 'date', 'id_venta'];
-        $sort = $req->query->sort ?? 'id_venta';
+        $allowedSorts = ['price', 'item', 'date', 'sale_id'];
+        $sort = $req->query->sort ?? 'sale_id';
         if ($sort === '')
-            $sort = 'id_venta'; // default
+            $sort = 'sale_id'; // default
         elseif (!in_array($sort, $allowedSorts))
             return ($res->json(['Invalid sort parameter' => $sort], 400));
 
@@ -184,6 +178,7 @@ class SellerApiController
             'price' => 'precio',
             'item' => 'producto',
             'date' => 'fecha',
+            'sale_id' => 'id_venta', 
             default => 'id_venta' // si llega otra cosa, ordena por ID
         };
         $order = match (strtolower($req->query->order ?? 'asc')) {
@@ -197,11 +192,11 @@ class SellerApiController
             'sales' => $sales,
             'metadata' => [
                     'current_page' => $page ?? 1,
+                    'max_pages' => $max_pages,
                     'current_size' => $size,
                     'total_sales' => $total,
-                    'max_pages' => $max_pages,
-                    'ordenado_por' => $sort,
-                    'orden' => $order
+                    'orderBy' => $sort,
+                    'order' => $order
                 ]
         ];
         return $res->json($response);

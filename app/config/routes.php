@@ -6,3 +6,9 @@ $router->addRoute('vendedores/:id',     'POST',      'ErrorApiController',    'n
 $router->addRoute('vendedores/:id/ventas',     'PUT',   'ErrorApiController',    'not_allowed');
 $router->addRoute('vendedores/:id/ventas',     'DELETE',   'ErrorApiController',    'not_allowed');
 $router->addRoute('vendedores/:id/ventas',     'POST',      'ErrorApiController',    'not_allowed');
+
+
+$router->addRoute('ventas',     'PUT',      'ErrorApiController',    'not_allowed');
+$router->addRoute('ventas',     'DELETE',      'ErrorApiController',    'not_allowed');
+$router->addRoute('ventas/:id',     'POST',      'ErrorApiController',    'not_allowed');
+

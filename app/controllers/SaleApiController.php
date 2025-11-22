@@ -107,13 +107,15 @@ class SaleApiController
 
             // Respuesta final
             $response = [
-                'ventas' => $sales,
-                'pagina' => $page,
-                'size' => $size,
-                'total_ventas' => $totalSales,
-                'total_paginas' => ceil($totalSales / $size),
-                'ordenado_por' => $sort,
-                'orden' => strtoupper($order)
+                'sales' => $sales,
+                'metadata' => [
+                    'current_page' => $page,
+                    'max_pages' => ceil($totalSales / $size),
+                    'current_size' => $size,
+                    'total_sales' => $totalSales,
+                    'orderBy' => $sort,
+                    'order' => strtoupper($order)
+                    ]
             ];
 
             return $res->json($response, 200);

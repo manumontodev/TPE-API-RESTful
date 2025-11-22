@@ -3,7 +3,6 @@ require_once 'app/models/UserModel.php';
 class AuthApiController
 {
     private $model;
-    private $view;
 
     public function __construct()
     {
@@ -12,7 +11,6 @@ class AuthApiController
 
     public function login($request, $res)
     {
-        session_start();
         $authorization = $request->authorization;
 
         $auth = explode(' ', $authorization);
@@ -51,13 +49,4 @@ class AuthApiController
         // devuelve token JWT
         return $res->json(createJWT($payload));
     }
-
-    // ya no se usa mas :c
-
-    // public function logout($request)
-    // {
-    //     session_destroy();
-    //     return;
-    // }
-
 }

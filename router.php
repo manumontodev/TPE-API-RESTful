@@ -1,9 +1,4 @@
 <?php
-//para chequear errores
-// error_reporting(E_ALL);
-//ini_set('display_errors', 1);               // No mostrar en pantalla (para producción)
-//ini_set('log_errors', 1);
-//ini_set('error_log', __DIR__ . '/php-error.log');
 
 require_once 'libs/router/router.php';
 require_once 'app/controllers/SellerApiController.php';
@@ -37,7 +32,6 @@ require_once './app/config/routes.php';
 
 // Login
 $router->addRoute('auth/login',     'GET',     'AuthApiController',    'login');
-$router->addRoute('auth/logout',     'GET',     'AuthApiController',    'logout');
 
 //  ventas
 $router->addRoute('ventas',         'GET',      'SaleApiController',    'getAllSales');

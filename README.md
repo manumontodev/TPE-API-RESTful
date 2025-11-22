@@ -3,7 +3,7 @@
 [![Status](https://img.shields.io/badge/Status-Completado-green.svg)](https://github.com/lumoreiralu/TPEspecial-web2-2025)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Este es el repositorio de la **API RESTful** de la [Tienda Computación](https://github.com/lumoreiralu/TPEspecial-web2-2025). La API permite gestionar las entidades de **Vendedores** y **Ventas**, proporcionando un conjunto de servicios de Alta, Baja, Modificación (ABM) y consulta a través de HTTP.
+Este es el repositorio de la **API REST** de la [Tienda Computación](https://github.com/lumoreiralu/TPEspecial-web2-2025). La API permite gestionar las entidades de **Vendedores** y **Ventas**, proporcionando un conjunto de servicios de Alta, Baja, Modificación (ABM) y consulta a través de HTTP.
 
 ## 🧑‍💻 Miembros del Equipo
 
@@ -16,7 +16,7 @@ Este es el repositorio de la **API RESTful** de la [Tienda Computación](https:/
 
 ## 🗺️ Endpoints de la API (Tabla de Ruteo)
 
-La API opera sobre dos recursos principales: `ventas` y `vendedores`. El acceso a los servicios de ABM requiere **Autenticación**.
+La API opera sobre dos recursos principales: `ventas` y `vendedores`. El acceso a los servicios de ABM requiere **Autenticación** y permisos de administrador. 
 
 ### Recurso: `/ventas`
 
@@ -49,16 +49,33 @@ La API opera sobre dos recursos principales: `ventas` y `vendedores`. El acceso 
 
 ## 🔎 Consultas Avanzadas (Filtros y Ordenamiento)
 
-La API permite obtener listas de ventas y vendedores aplicando filtros, paginación y ordenamiento sobre diversos campos.
+La API permite obtener listas de ventas y vendedores aplicando filtros, paginación y ordenamiento sobre diversos campos. Se pueden combinar entre sí concatenandose con `&`. A continuación se detallan ejemplos y valores aceptados:
 
-| Operación | Ejemplo de URL | Descripción |
+
+### Recurso: /VENTAS
+| Operación | Ejemplo de URL | Descripción | 
 | :--- | :--- | :--- |
-| **Paginación & Ordenamiento** | `/ventas?page=2&sort=price&order=desc` | Obtiene la página 2 de ventas, ordenadas por `precio` de forma descendente. |
 | **Ordenamiento Simple** | `/ventas?sort=price` | Ordena las ventas por `precio` (ascendente por defecto). |
 | **Filtrado por Rango** | `/ventas?min_price=4000&max_price=5000` | Filtra ventas dentro de un rango de precios. |
 | **Filtrado por Campo** | `/vendedores?name=Lucia` | Filtra vendedores cuyo nombre es "Lucia". |
 | **Filtrado Relacional** | `/ventas?seller_id=1` | Filtra todas las ventas realizadas por el vendedor con `id_vendedor=1`. |
 
+### Recurso: /vendedores
+| Operación | Ejemplo de URL | Descripción | Valores aceptados | Defecto |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ordenamiento** | `?sort=phone&order=desc` | Ordena los vendedores segun el criterio solicitado. Opcionalmente se puede solicitar que la dirección de ordenamiento sea descendente u ascendente. | sort: `name`, `email`, `phone`, `id` order: `asc`, `desc` | default: `sort=id` y `order=asc`  |  
+| **Filtrado** | `?phone=249&name=Pepito` ó `?email=.%@&phone=2%84` | Devuelve los vendedores que cumplan con el o los filtros solicitados. Se pueden concatenar entre sí o por descomposición de palabras utilizando el operador `%` | filtros: `name`, `email`, `phone` | No existe un filto por defecto  |  
+
+### Recurso: /vendedores/:id/ventas
+| Operación | Ejemplo de URL | Descripción | Valores aceptados | Defecto |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ordenamiento** | `?sort=price&order=desc` | Permite ordenar las ventas segun un criterio solicitado. Opcionalmente se puede solicitar que la dirección de ordenamiento sea descendente u ascendente. | sort: `sale_id` `price`, `item`, `date` order: `asc`, `desc` | default: `sort=sale_id` y `order=asc`  |  
+
+
+### PAGINACION 
+| Operación | Ejemplo de URL | Descripción | Valores aceptados | Defecto |
+| :--- | :--- | :--- | :--- | :--- |
+ **Paginación** | `?page=1&size=4` | Funciona para todos los recursos mencionados anteriormente. Se puede modificar el tamaño de las paginas usando `&size`. La inclusion de ambos parametros (page&size) es opcional. | Ambos parametros son opcionales. El valor solicitado para ajustar la cantidad de elementos por pagina debe ser un numero entero positivo.  |  Por defecto se mostrara `page=1`, con tamaño por defecto de`size=5`|  
 ---
 
 ## 🛠️ Estructura de Datos (JSON Body)
@@ -80,6 +97,20 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 | **Vendedor** (`POST/PUT`) | ```json { "nombre": "______", "telefono": ______, "email": "______" } ``` |
 
 > **Nota sobre `PUT`:** Para modificar un recurso (`PUT /:id`), el cuerpo de la solicitud debe incluir **todos los campos** de la entidad, no solo los que se van a modificar.
+
+### Endpoints Invalidos y Acceso Restringido (`POST`, `PUT` y `DELETE`)
+Si el cliente envía una solictud a un endpoint de acceso restringido, por ej. `POST  /api/vendedores/:id`, recibirá alguno los siguientes mensajes de error:
+
+- Si no se encuentra logeado, recibirá un `401` Unauthorized y se le solicitará autenticarse.
+- Si se encuentra logeado, pero no cuenta con permisos (rol) de administrador, recibirá un `403` Forbidden.
+
+Si el cliente envía una solicitud a un recurso valido pero con un método inválido, por ejemplo DELETE /api/vendedores:
+
+- Recibirá un `405 Method Not Allowed`
+
+Si el cliente envía una solicitud, independientemente del verbo, a un endpoint que no fue marcado como válido en la presente documentación:
+
+- Recibirá un `404 => Route Not Found`.
 
 ---
 
