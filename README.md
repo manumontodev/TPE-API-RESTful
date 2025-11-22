@@ -3,7 +3,7 @@
 [![Status](https://img.shields.io/badge/Status-Completado-green.svg)](https://github.com/lumoreiralu/TPEspecial-web2-2025)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Este es el repositorio de la **API REST** de la [Tienda Computación](https://github.com/lumoreiralu/TPEspecial-web2-2025). La API permite gestionar las entidades de **Vendedores** y **Ventas**, proporcionando un conjunto de servicios de Alta, Baja, Modificación (ABM) y consulta a través de HTTP.
+Este es el repositorio de la **API REST** de la [Tienda Computación](https://github.com/lumoreiralu/TPEspecial-web2-2025). La API permite gestionar las entidades de **Vendedores** y **Ventas**, proporcionando un conjunto de servicios de Alta, Baja, Modificación (ABM).
 
 ## 🧑‍💻 Miembros del Equipo
 
@@ -32,6 +32,7 @@ Este es el repositorio de la **API REST** de la [Tienda Computación](https://gi
 - user: manuel
 - password: manuel
 ```
+
 ---
 
 ## 🗺️ Endpoints de la API (Tabla de Ruteo)
@@ -63,7 +64,7 @@ La API opera sobre dos recursos principales: `ventas` y `vendedores`. El acceso 
 
 | Verbo HTTP | Endpoint      | Descripción                                                                                                                                                |
 | :--------- | :------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`GET`**  | `/auth/login` | Genera un **Token JWT** necesario para incluir en el encabezado de las solicitudes (headers) que acceden a los servicios de ABM (`POST`, `PUT`, `DELETE`). |
+| **`GET`**  | `/auth/login` | Genera un **Token JWT** necesario para incluir en el encabezado de las solicitudes (Bearer) que acceden a los servicios de ABM (`POST`, `PUT`, `DELETE`). Proporcionar usuario y contraseña en la request (Basic) |
 
 ---
 
@@ -101,13 +102,28 @@ La API permite obtener listas de ventas y vendedores aplicando filtros, paginaci
 
 ---
 
+## Endpoints Invalidos y Acceso Restringido (`POST`, `PUT` y `DELETE`)
+
+Si el cliente envía una solictud a un endpoint de acceso restringido, por ej. `POST  /api/vendedores/:id`, recibirá alguno los siguientes mensajes de error:
+
+- Si no se encuentra logeado, recibirá un `401` Unauthorized y se le solicitará autenticarse.
+- Si se encuentra logeado, pero no cuenta con permisos (rol) de administrador, recibirá un `403` Forbidden.
+
+Si el cliente envía una solicitud a un recurso valido pero con un método inválido, por ejemplo DELETE /api/vendedores:
+
+- Recibirá un `405 Method Not Allowed`
+
+Si el cliente envía una solicitud, independientemente del verbo, a un endpoint que no fue marcado como válido en la presente documentación:
+
+- Recibirá un `404 => Route Not Found`.
+
 ## 🛠️ Ejemplos de Request y Response
 
 A continuación, se detalla la estructura JSON esperada para las solicitudes (`POST` y `PUT`) y las respuestas (`GET`).
 
 ### Formato de Request
 
-- **POST /ventas**
+- ``POST /ventas``
 
 ```bash
 {
@@ -118,7 +134,7 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 }
 ```
 
-- **put /ventas/:id**
+- ``put /ventas/:id``
 
 ```bash
 {
@@ -128,7 +144,7 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 }
 ```
 
-- **POST /vendedores**
+- ``POST /vendedores``
 
 ```bash
   "nombre": "Nuevo",
@@ -136,7 +152,7 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
   "email": "nuevo@mail.com"
 ```
 
-- **PUT /vendedores/:id**
+- ``PUT /vendedores/:id``
 
 ```bash
 {
@@ -148,7 +164,71 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 
 ### Formato de Respuesta (`GET /:id`)
 
-- **/venta/:id**
+- ``/ventas?page=1&size=2``
+
+```bash
+{
+  "sales": [
+    {
+      "id_venta": 1,
+      "producto": "Monitor Smart HD Samsung",
+      "precio": "310900.00",
+      "id_vendedor": 1,
+      "fecha": "2025-10-01",
+      "vendedor": "Lucia M"
+    },
+    {
+      "id_venta": 2,
+      "producto": "Teclado Mecanico Logitech",
+      "precio": "3900.00",
+      "id_vendedor": 2,
+      "fecha": "2025-10-06",
+      "vendedor": "Manuel"
+    }
+  ],
+  "metadata": {
+    "current_page": 1,
+    "max_pages": 29,
+    "current_size": 2,
+    "total_sales": 57,
+    "orderBy": "id_venta",
+    "order": "ASC"
+  }
+}
+```
+
+- ``/vendedores?page=1&size=2``
+
+```bash
+{
+  "sellers": [
+    {
+      "id": 1,
+      "nombre": "Lucia M",
+      "telefono": "2494000001",
+      "email": "lucia@tienda.com",
+      "imagen": "img/default-user-img.jpg"
+    },
+    {
+      "id": 2,
+      "nombre": "Manuel",
+      "telefono": "2494000005",
+      "email": "manuel@tienda.com",
+      "imagen": "img/default-user-img.jpg"
+    }
+  ],
+  "metadata": {
+    "current_page": 1,
+    "max_pages": 9,
+    "current_size": 2,
+    "total_sellers": 17,
+    "orderBy": "id",
+    "order": "ASC"
+  }
+}
+```
+
+- ``/venta/:id``
 
 ```bash
 {
@@ -161,7 +241,7 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 }
 ```
 
-- **/vendedor/id**
+- ``/vendedor/id``
 
 ```bash
 {
@@ -174,7 +254,7 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 
 ### Query Params
 
-- **GET ventas?page=1&size=1**
+- ``GET ventas?page=1&size=2 (paginado)``
 
 ```bash
 {
@@ -207,7 +287,7 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 }
 ```
 
-- **vendedores?sort=name&order=desc&page=1&size=2**
+- ``vendedores?sort=name&order=desc&page=1&size=2 (ordenamiento y paginado)``
 
 ```bash
 {
@@ -238,31 +318,6 @@ A continuación, se detalla la estructura JSON esperada para las solicitudes (`P
 }
 ```
 
-### Formato de Solicitud (`POST` y `PUT`)
-
-| Recurso                   | Solicitud JSON (Body)                                                                  |
-| :------------------------ | :------------------------------------------------------------------------------------- |
-| **Venta** (`POST/PUT`)    | `json { "producto": "______", "precio": ___, "id_vendedor": _, "fecha": "________" } ` |
-| **Vendedor** (`POST/PUT`) | `json { "nombre": "______", "telefono": ______, "email": "______" } `                  |
-
-> **Nota sobre `PUT`:** Para modificar un recurso (`PUT /:id`), el cuerpo de la solicitud debe incluir **todos los campos** de la entidad, no solo los que se van a modificar.
-
-### Endpoints Invalidos y Acceso Restringido (`POST`, `PUT` y `DELETE`)
-
-Si el cliente envía una solictud a un endpoint de acceso restringido, por ej. `POST  /api/vendedores/:id`, recibirá alguno los siguientes mensajes de error:
-
-- Si no se encuentra logeado, recibirá un `401` Unauthorized y se le solicitará autenticarse.
-- Si se encuentra logeado, pero no cuenta con permisos (rol) de administrador, recibirá un `403` Forbidden.
-
-Si el cliente envía una solicitud a un recurso valido pero con un método inválido, por ejemplo DELETE /api/vendedores:
-
-- Recibirá un `405 Method Not Allowed`
-
-Si el cliente envía una solicitud, independientemente del verbo, a un endpoint que no fue marcado como válido en la presente documentación:
-
-- Recibirá un `404 => Route Not Found`.
-
----
 
 ## ⚙️ Instalación y Configuración
 
