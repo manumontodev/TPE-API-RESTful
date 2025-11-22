@@ -329,7 +329,7 @@ El sitio está configurado para realizar un **auto-deploy** de la base de datos 
 
 1. Asegúrate de tener **Apache** y **phpMyAdmin** corriendo (por ejemplo, usando [XAMPP](https://www.apachefriends.org/)).
 2. Clona este repositorio dentro de la carpeta `htdocs` de tu servidor Apache.
-3. Accede al proyecto a través de tu navegador local.
+3. La API ya esta lista para comenzar a enviarle requests! A medida que se instancian los componentes, se irán creando automáticamente las tablas de la base de datos y cargando con datos iniciales. 
 
 ### 2. Instalación Manual de la Base de Datos
 
