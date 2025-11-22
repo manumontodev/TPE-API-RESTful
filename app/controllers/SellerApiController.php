@@ -2,15 +2,19 @@
 require_once 'app/models/SellerModel.php'; //aca esta seller en minuscula, te funciona?
 require_once 'app/models/SaleModel.php';
 
-class sellerApiController
+class SellerApiController
 {
     private $sellerModel;
     private $saleModel;
-    private const INVALID_ID = ['Syntax Error' => 'Provided ID is not a valid ID'];
-    private const INVALID_PAGE = [
-        'Syntax Error' => 'Syntax Error: Required page is not a valid number',
-        'Out of Range' => "Out of Range: Required page is out of range."
+    private const ERRORS = [
+        'Invalid ID' => [
+            'Error' => 'Provided ID is not valid'
+        ],
+        'Invalid Page' => [
+            'Error' => 'Page or page size is not a valid number'
+        ]
     ];
+
 
     function __construct()
     {
@@ -42,7 +46,7 @@ class sellerApiController
     public function update($req, $res)
     {
         // valida 
-        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
+        $id = $this->validate_int($req->params->id, $res, self::ERRORS['Invalid ID']);
         $this->validate_body($req, $res);
         $this->seller_exists($id, $res);
 
@@ -62,48 +66,163 @@ class sellerApiController
     function delete($req, $res)
     {
         // valida
-        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
+        $id = $this->validate_int($req->params->id, $res, self::ERRORS['Invalid ID']);
         $this->seller_exists($id, $res);
 
         // elimina
         $delete = $this->sellerModel->delete($id);
         if (!$delete)
-            return $res->json(['An unexpected error occurred on the server'], 500);
-        return $res->json('', 204);
+            return $res->json(['Error' => 'An unexpected error occurred on the server'], 500);
+        http_response_code(204);
+        die();
     }
 
     /* ------------ GETTERS VENDEDORES ------------ */
     public function getAll($req, $res)
     {
-        $sort = !empty($req->query->sort) ? $req->query->sort : 'id'; // campos
-        $order = $req->query->order ?? 'ASC'; // direccion
-        $page = $req->query->page ?? null;
-        $_size = $req->query->size ?? 5; // default 5 por pagina
+        // filtros
+        $filterData = $this->getFilterData($req);
+        $filters = $filterData['filters'];
+        $params = $filterData['params'];
 
         // paginacion
-        if (!empty($page))
-            $page = $this->validate_int($page, $res, self::INVALID_PAGE['Syntax Error']);
-        if (!empty($_size) && $_size != 5)
-            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE['Syntax Error']);
+        $page = $req->query->page ?? null;
+        $size = $req->query->size ?? null;
+        $total = $this->sellerModel->countSellers($filters, $params);
+
+        if (empty($size))
+            $size = !empty($page) ? 5 : $total;
+        else
+            $size = $this->validate_int($size, $res, self::ERRORS['Invalid Page']);
+
+        $max_pages = $total === 0 ? 1 : ceil($total / $size);
+        $page = filter_var($page, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1]
+        ]);
+        if (!$page) {
+            $page = 1;
+        }
 
         // ordenamiento
-        if (!empty($req->query->sort)) {
-            $sort = match ($sort) {
-                'name' => 'nombre',
-                'email' => 'email',
-                'phone' => 'telefono',
-                default => 'id' // si llega otra cosa queda ordena por ID
-            };
-        }
-        if (!empty($req->query->order)) {
-            $order = match ($order) {
-                'desc' => 'DESC',
-                'asc' => 'ASC',
-                default => 'ASC' // si llega otra cosa ordena ASC
-            };
-        }
+        $allowedSorts = ['name', 'email', 'phone', 'id'];
+        $sort = $req->query->sort ?? 'id';
+        if ($sort === '')
+            $sort = 'id'; // default
+        elseif (!in_array($sort, $allowedSorts))
+            return ($res->json(['Invalid sort parameter' => $sort], 400));
 
-        // filtros
+        $sort = match ($req->query->sort ?? '') {
+            'name' => 'nombre',
+            'email' => 'email',
+            'phone' => 'telefono',
+            default => 'id'
+        };
+        $order = match (strtolower($req->query->order ?? 'asc')) {
+            'desc' => 'DESC',
+            'asc' => 'ASC',
+            default => 'ASC',
+        };
+
+        $sellers = $this->sellerModel->getSellers($sort, $order, $page, $size, $filters, $params);
+        // incluye metadata de la paginacion
+        $response = [
+            'sellers' => $sellers,
+            'metadata' => [
+                'current_page' => $page ?? 1,
+                'current_size' => $size,
+                'total_sellers' => $total,
+                'max_pages' => $max_pages,
+                'ordenado_por' => $sort,
+                'orden' => $order
+            ]
+        ];
+
+        return $res->json($response);
+    }
+
+
+    public function get($req, $res)// obtiene un vendedor por su ID
+    {
+        // valida
+        $id = $this->validate_int($req->params->id, $res, self::ERRORS['Invalid ID']);
+        $seller = $this->seller_exists($id, $res);
+
+        return $res->json($seller);
+    }
+
+    public function getSalesById($req, $res)
+    {
+        // valida
+        $id = $this->validate_int($req->params->id, $res, self::ERRORS['Invalid ID']);
+        $this->seller_exists($id, $res);
+
+        // paginacion
+        $total = $this->saleModel->countSales(['id_vendedor = ' . $id]); // cuenta solo las q corresponden al vendedor
+        $page = $req->query->page ?? null;
+        $size = $req->query->size ?? null;
+
+        if (empty($size))
+            $size = !empty($page) ? 5 : $total;
+        else
+            $size = $this->validate_int($size, $res, self::ERRORS['Invalid Page']);
+        $max_pages = $total === 0 ? 1 : ceil($total / $size);
+
+        if (!empty($page)) {
+            $page = $this->validate_int($page, $res, self::ERRORS['Invalid Page']);
+        } else
+            $page = 1;
+
+        // ordenamiento
+        $allowedSorts = ['price', 'item', 'date', 'id_venta'];
+        $sort = $req->query->sort ?? 'id_venta';
+        if ($sort === '')
+            $sort = 'id_venta'; // default
+        elseif (!in_array($sort, $allowedSorts))
+            return ($res->json(['Invalid sort parameter' => $sort], 400));
+
+        $sort = match ($req->query->sort ?? '') {
+            'price' => 'precio',
+            'item' => 'producto',
+            'date' => 'fecha',
+            default => 'id_venta' // si llega otra cosa, ordena por ID
+        };
+        $order = match (strtolower($req->query->order ?? 'asc')) {
+            'desc' => 'DESC',
+            'asc' => 'ASC',
+            default => 'ASC',
+        };
+
+        $sales = $this->saleModel->getSalesById($id, $sort, $order, $page, $size);
+        $response = [
+            'sales' => $sales,
+            'metadata' => [
+                    'current_page' => $page ?? 1,
+                    'current_size' => $size,
+                    'total_sales' => $total,
+                    'max_pages' => $max_pages,
+                    'ordenado_por' => $sort,
+                    'orden' => $order
+                ]
+        ];
+        return $res->json($response);
+
+    }
+
+    /**
+     * Devuelve un array con los query params de filtrado que llegan vía request 
+     * ej.: 
+     * - $req->query->name: "nombre LIKE :name" => "%{name}%", 
+     * - $req->query->email: "email LIKE :email" => "%{email}%",
+     * - $req->query->phone: "telefono LIKE :phone" => "%{phone}%"
+     * 
+     * @param object $req
+     * @return array =>
+     *     - filters: string[],    // filtros SQL (ej. "nombre LIKE :name")
+     *     - params: array<string,string> // arreglo asociativo de params (ej. [':name' => '%foo%'])
+     * 
+     */
+    private function getFilterData($req)
+    {
         $filters = [];
         $params = [];
 
@@ -122,94 +241,13 @@ class sellerApiController
             $params[':phone'] = '%' . $req->query->phone . '%';
         }
 
-        $sellers = $this->sellerModel->getSellers($sort, $order, $page, $_size, $filters, $params);
+        return [
+            'filters' => $filters,
+            'params' => $params
+        ];
 
-        if (empty($page)):
-            return $res->json($sellers);
-        else:
-            $total = $this->sellerModel->countSellers($filters, $params);
-            $max_pages = ceil($total / $_size);
-            // envia metadata de la paginacion en la response
-            $response = [
-                'sellers' => $sellers,
-                'page' => $this->validate_page_range($page, $max_pages, $res, self::INVALID_PAGE['Out of Range']),
-                'size' => $_size,
-                'total_sellers' => $total,
-                'max_pages' => $max_pages
-            ];
-
-            return $res->json($response);
-
-        endif;
     }
 
-
-    public function get($req, $res)// obtiene un vendedor por su ID
-    {
-        // valida
-        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
-        $seller = $this->seller_exists($id, $res);
-
-        return $res->json($seller);
-    }
-
-    public function getSalesById($req, $res)
-    {
-        $sort = !empty($req->query->sort) ? $req->query->sort : 'id_venta'; // campos
-        $order = $req->query->order ?? 'ASC'; // direccion
-        $page = $req->query->page ?? null;
-        $_size = $req->query->size ?? 3; // default = 3 ventas x pagina
-
-        // valida
-        $id = $this->validate_int($req->params->id, $res, self::INVALID_ID);
-        $this->seller_exists($id, $res);
-
-        // paginacion
-        if (!empty($page))
-            $page = $this->validate_int($page, $res, self::INVALID_PAGE['Syntax Error']);
-        if (!empty($_size) && $_size != 5)
-            $_size = $this->validate_int($_size, $res, self::INVALID_PAGE['Syntax Error']);
-
-        // ordenamiento
-        if (!empty($req->query->sort)) {
-            $sort = match ($sort) {
-                'price' => 'precio',
-                'product' => 'producto',
-                'date' => 'fecha',
-                default => 'id_venta' // si llega otra cosa queda ordena por ID
-            };
-        }
-        if (!empty($req->query->order)) {
-            $order = match ($order) {
-                'desc' => 'DESC',
-                'asc' => 'ASC',
-                default => 'ASC' // si llega otra cosa ordena ASC
-            };
-        }
-
-        $sales = $this->saleModel->getSalesById($id, $sort, $order, $page, $_size);
-
-        if (empty($page)):
-            return $res->json($sales);
-        else:
-            $total = $this->saleModel->countSales(['id_vendedor = ' . $id]); // cuenta solo las q corresponden al vendedor
-            if ($_size > $total)
-                $_size = $total;
-            $max_pages = ceil($total / $_size);
-            // envia metadata de la paginacion en la response
-            $response = [
-                'ventas' => $sales,
-                'page' => $this->validate_page_range($page, $max_pages, $res, self::INVALID_PAGE['Out of Range']),
-                'size' => $_size,
-                'total_sales' => $total,
-                'max_pages' => $max_pages
-            ];
-
-
-            return $res->json($response);
-
-        endif;
-    }
 
     /* ------------ VALIDACIONES ------------ */
     /**
@@ -217,13 +255,14 @@ class sellerApiController
      * @return int si es es valido, lo devuelve como entero
      * @throws Error sino, corta ejecucion y envia $res->json($message, 400)
      */
-    private function validate_int($id, $res, $msg)
+    private function validate_int($num, $res, $msg)
     {
-        $id = filter_var($id, FILTER_VALIDATE_INT);
-        if (!$id)
+        $num = filter_var($num, FILTER_VALIDATE_INT);
+        if ($num <= 0 || !$num)
             die($res->json($msg, 400));
-        return $id;
+        return $num;
     }
+
     /**
      * verifica que body request contenga todos datos obligatorios y valida formato de email
      * @return mixed si pasa las validaciones devuelve true
@@ -236,13 +275,6 @@ class sellerApiController
         elseif (!filter_var($req->body->email, FILTER_VALIDATE_EMAIL))
             die($res->json(['Syntax error' => 'The provided email is not a valid email'], 400));
         return true;
-    }
-
-    private function validate_page_range($num, $range, $res, $msg)
-    {
-        if ($num > $range)
-            die($res->json($msg . ' Total pages = ' . $range, 400)); // agrego informacion extra al msg de error
-        return $num;
     }
 
     /**
