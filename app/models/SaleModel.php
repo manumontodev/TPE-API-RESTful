@@ -77,7 +77,6 @@ class SaleModel extends Model{
         $query->execute();
         return $query->fetchColumn();
     }
-    
 
 
     public function getSalesById($sellerId, $sort = null, $order = null, $page = null, $_size = 3)

@@ -9,7 +9,7 @@ Este es el repositorio de la **API REST** de la [Tienda Computación](https://gi
 
 | Nombre             | GitHub                                               | Email                             |
 | :----------------- | :--------------------------------------------------- | :-------------------------------- |
-| **Lucia Moreira**  | [@luciamoreira96](https://github.com/luciamoreira96) | `lulii.moreira96@gmail.com`       |
+| **Lucia Moreira**  | [@lumoreiralu](https://github.com/lumoreiralu) | `lulii.moreira96@gmail.com`       |
 | **Manuel Montoya** | [@manumontodev](https://github.com/manumontodev)     | `montoya.christensen@outlook.com` |
 
 ---

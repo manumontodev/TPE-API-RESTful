@@ -20,21 +20,27 @@ class SaleApiController
     public function getAllSales($req, $res)
     {
         try {
-            // opciones para ordenamiento
-            $allowedsorts = ['sale_id', 'item', 'price', 'seller_id', 'date'];
+            // opciones validas para ordenamiento
+            $words_acept = ['sale_id', 'item', 'price', 'seller_id', 'date'];
 
+            //Si el usuario no envió nada, usa 'sale_id' como valor por defecto.
             $sort = strtolower($req->query->sort ?? 'sale_id');
+            //lo mismo aca, si no se envia nada, usa asc 
             $order = strtolower($req->query->order ?? 'asc');
 
             // validar orden asc/desc
-            $order = $order === 'desc' ? 'desc' : 'asc';
+            if ($order === 'desc') {
+                $order = 'desc';
+            } else {
+                $order = 'asc';
+            }
 
-            // validar campo permitido
-            if (!in_array($sort, $allowedsorts)) {
+            // validar campo permitido: si el $sort enviado por el usuario no esta en la lista de las palabras permitidas:  
+            if (!in_array($sort, $words_acept)) {
                 return $res->json("Campo de ordenamiento no permitido: $sort", 400);
             }
 
-            $sortMap = [
+            $sortOptions = [
                 'sale_id' => 'id_venta',
                 'item' => 'producto',
                 'price' => 'precio',
@@ -42,10 +48,11 @@ class SaleApiController
                 'date' => 'fecha',
             ];
 
-            $sort = $sortMap[$sort] ?? 'id_venta';
+            //vemos que el usuario envie opciones permitidas, y si no se usa id_venta
+            $sort = $sortOptions[$sort] ?? 'id_venta';
 
 
-            // Validar page
+            // Validar y limpiar datos con filter_var(): que sea un numero, que sea entero y mayor a 0
             $page = filter_var($req->query->page ?? null, FILTER_VALIDATE_INT, [
                 'options' => ['min_range' => 1]
             ]);
@@ -99,6 +106,7 @@ class SaleApiController
             $sales = $this->model->getAll($sort, $order, $filters, $size, $offset, $params);
             $totalSales = $this->model->countSales($filters, $params);
 
+
             // Agregar información del vendedor
             foreach ($sales as &$sale) {
                 $seller = $this->modelSeller->getSellerById($sale->id_vendedor);
@@ -115,6 +123,7 @@ class SaleApiController
                     'total_sales' => $totalSales,
                     'orderBy' => $sort,
                     'order' => strtoupper($order)
+
                     ]
             ];
 
@@ -124,6 +133,7 @@ class SaleApiController
             return $res->json(['error' => 'Error interno del servidor.'], 500);
         }
     }
+
 
 
     // api/ventas/:id (GET)
